@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { theme } from '../../styles/theme';
 
 interface TagProps {
-  variant?: 'primary' | 'secondary' | 'calm' | 'warm';
+  variant?: 'primary' | 'secondary' | 'calm' | 'warm' | 'outline';
   size?: 'sm' | 'md';
 }
 
@@ -26,6 +26,11 @@ const variants = {
     bg: theme.colors.warm[100],
     text: theme.colors.warm[700],
     border: theme.colors.warm[200],
+  },
+  outline: {
+    bg: 'transparent',
+    text: theme.colors.neutral[600],
+    border: theme.colors.neutral[300],
   },
 };
 

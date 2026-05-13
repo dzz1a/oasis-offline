@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import styled from 'styled-components';
-import { TreeDeciduous, Menu, X, Search, Bell, User } from 'lucide-react';
+import { TreeDeciduous, Menu, X, Search, Bell, User, LogOut } from 'lucide-react';
 import { theme } from '../../styles/theme';
 import { Avatar } from '../ui/Avatar';
 
@@ -7,6 +8,7 @@ interface HeaderProps {
   currentUser?: { username: string };
   onNavChange: (nav: string) => void;
   currentNav: string;
+  onLogout?: () => void;
 }
 
 const HeaderContainer = styled.header`
@@ -185,7 +187,40 @@ const MobileNavLink = styled.button<{ active: boolean }>`
   }
 `;
 
-export const Header = ({ currentUser, onNavChange, currentNav }: HeaderProps) => {
+const UserMenu = styled.div`
+  position: absolute;
+  top: 64px;
+  right: 20px;
+  background: white;
+  border-radius: ${theme.borderRadius.md};
+  box-shadow: ${theme.shadows.lg};
+  padding: ${theme.spacing[1]};
+  min-width: 180px;
+`;
+
+const UserMenuItem = styled.button`
+  width: 100%;
+  padding: ${theme.spacing[2]} ${theme.spacing[4]};
+  border: none;
+  background: transparent;
+  border-radius: ${theme.borderRadius.sm};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[2]};
+  color: ${theme.colors.neutral[600]};
+  font-size: ${theme.fonts.sizes.sm};
+  transition: all ${theme.transitions.fast};
+
+  &:hover {
+    background-color: ${theme.colors.neutral[100]};
+  }
+`;
+
+export const Header = ({ currentUser, onNavChange, currentNav, onLogout }: HeaderProps) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   const navItems = [
     { id: 'home', label: '首页' },
     { id: 'forum', label: '绿洲' },
@@ -223,7 +258,25 @@ export const Header = ({ currentUser, onNavChange, currentNav }: HeaderProps) =>
             <Bell size={20} />
           </ActionButton>
           {currentUser ? (
-            <Avatar name={currentUser.username} size="sm" />
+            <div style={{ position: 'relative' }}>
+              <Avatar 
+                name={currentUser.username} 
+                size="sm" 
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              />
+              {userMenuOpen && (
+                <UserMenu>
+                  <UserMenuItem onClick={() => { onNavChange('profile'); setUserMenuOpen(false); }}>
+                    <User size={16} />
+                    <span>个人中心</span>
+                  </UserMenuItem>
+                  <UserMenuItem onClick={() => { onLogout?.(); setUserMenuOpen(false); }}>
+                    <LogOut size={16} />
+                    <span>退出登录</span>
+                  </UserMenuItem>
+                </UserMenu>
+              )}
+            </div>
           ) : (
             <ActionButton>
               <User size={20} />
@@ -231,16 +284,16 @@ export const Header = ({ currentUser, onNavChange, currentNav }: HeaderProps) =>
           )}
         </Actions>
 
-        <MobileMenuButton>
-          <Menu size={20} />
+        <MobileMenuButton onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </MobileMenuButton>
       </HeaderContent>
-      <MobileNav isOpen={false}>
+      <MobileNav isOpen={mobileMenuOpen}>
         {navItems.map((item) => (
           <MobileNavLink
             key={item.id}
             active={currentNav === item.id}
-            onClick={() => onNavChange(item.id)}
+            onClick={() => { onNavChange(item.id); setMobileMenuOpen(false); }}
           >
             {item.label}
           </MobileNavLink>
