@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { Heart, MessageCircle, Share2, Send, Plus, Filter, Search, X, User, ChevronDown, ChevronUp, Trash2, Bookmark, Users, Copy, Check } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Send, Plus, Filter, Search, X, User, ChevronDown, ChevronUp, Trash2, Bookmark, Users, Copy, Check, Headphones, Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { theme } from '../styles/theme';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
@@ -50,6 +50,19 @@ interface ForumPageProps {
   onNavigate: (page: string) => void;
   currentUser: User;
 }
+
+// 白噪音列表
+const whiteNoiseList = [
+  { id: 'rain', name: '下雨声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-ambience-17.mp3' },
+  { id: 'waves', name: '海浪声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-sea-waves-ambience-1189.mp3' },
+  { id: 'forest', name: '森林鸟鸣', url: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-1210.mp3' },
+  { id: 'stream', name: '小溪流水', url: 'https://assets.mixkit.co/sfx/preview/mixkit-small-stream-water-flow-1200.mp3' },
+  { id: 'fire', name: '篝火声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackling-1319.mp3' },
+  { id: 'wind', name: '微风声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-breeze-through-trees-1249.mp3' },
+  { id: 'whitenoise', name: '纯白噪音', url: 'https://assets.mixkit.co/sfx/preview/mixkit-static-white-noise-1280.mp3' },
+  { id: 'cafe', name: '咖啡馆', url: 'https://assets.mixkit.co/sfx/preview/mixkit-restaurant-ambience-1217.mp3' },
+  { id: 'library', name: '图书馆', url: 'https://assets.mixkit.co/sfx/preview/mixkit-quiet-library-ambience-1260.mp3' },
+];
 
 const ForumContainer = styled.div`
   max-width: 1200px;
@@ -617,6 +630,95 @@ const CopiedMessage = styled.div`
   margin-top: ${theme.spacing[3]};
 `;
 
+// ========== 静音仓样式 ==========
+const QuietRoomCard = styled.div`
+  background: linear-gradient(135deg, ${theme.colors.calm[50]} 0%, ${theme.colors.primary[50]} 100%);
+  border-radius: ${theme.borderRadius.lg};
+  padding: ${theme.spacing[4]};
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid ${theme.colors.calm[200]};
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[3]};
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+  }
+`;
+
+const QuietRoomIcon = styled.div`
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, ${theme.colors.calm[500]} 0%, ${theme.colors.primary[500]} 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+`;
+
+const QuietRoomText = styled.div`
+  flex: 1;
+`;
+
+const QuietRoomTitle = styled.div`
+  font-weight: ${theme.fonts.weights.medium};
+  color: ${theme.colors.neutral[800]};
+  font-size: ${theme.fonts.sizes.base};
+`;
+
+const QuietRoomDesc = styled.div`
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[600]};
+  margin-top: 2px;
+`;
+
+const NoiseGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: ${theme.spacing[3]};
+  margin-bottom: ${theme.spacing[4]};
+`;
+
+const NoiseItem = styled.div<{ active: boolean }>`
+  padding: ${theme.spacing[3]};
+  border-radius: ${theme.borderRadius.md};
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid ${props => props.active ? theme.colors.primary[500] : theme.colors.neutral[200]};
+  background: ${props => props.active ? theme.colors.primary[50] : '#fff'};
+`;
+
+const NoisePlayer = styled.div`
+  background: ${theme.colors.neutral[50]};
+  padding: ${theme.spacing[4]};
+  border-radius: ${theme.borderRadius.md};
+  text-align: center;
+`;
+
+const PlayButton = styled.button`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, ${theme.colors.primary[500]}, ${theme.colors.calm[500]});
+  color: white;
+  border: none;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`;
+
+const VolumeBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
 export const ForumPage = ({ onNavigate, currentUser }: ForumPageProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -633,10 +735,51 @@ export const ForumPage = ({ onNavigate, currentUser }: ForumPageProps) => {
   const [copied, setCopied] = useState(false);
   const [replyTo, setReplyTo] = useState<{ postId: string; commentId: string; authorId: string; authorName: string } | null>(null);
 
+  // 静音仓状态
+  const [quietRoomOpen, setQuietRoomOpen] = useState(false);
+  const [currentNoise, setCurrentNoise] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     fetchPosts();
     fetchFavorites();
   }, []);
+
+  // 音频切换
+  useEffect(() => {
+    if (!audioRef.current || !currentNoise) return;
+    const noise = whiteNoiseList.find(n => n.id === currentNoise);
+    if (!noise) return;
+    audioRef.current.src = noise.url;
+    audioRef.current.loop = true;
+    if (isPlaying) audioRef.current.play().catch(console.warn);
+  }, [currentNoise, isPlaying]);
+
+  // 音量控制
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  const togglePlay = () => {
+    if (!audioRef.current || !currentNoise) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.warn);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const closeQuietRoom = () => {
+    if (audioRef.current) audioRef.current.pause();
+    setQuietRoomOpen(false);
+    setCurrentNoise(null);
+    setIsPlaying(false);
+  };
 
   const fetchPosts = async () => {
     try {
@@ -1031,6 +1174,21 @@ export const ForumPage = ({ onNavigate, currentUser }: ForumPageProps) => {
             </CardBody>
           </SidebarCard>
 
+          {/* ========== ✅ 静音仓入口（你要的位置） ========== */}
+          <SidebarCard>
+            <CardBody>
+              <QuietRoomCard onClick={() => setQuietRoomOpen(true)}>
+                <QuietRoomIcon>
+                  <Headphones size={20} />
+                </QuietRoomIcon>
+                <QuietRoomText>
+                  <QuietRoomTitle>静音仓</QuietRoomTitle>
+                  <QuietRoomDesc>放松心情 · 白噪音播放器</QuietRoomDesc>
+                </QuietRoomText>
+              </QuietRoomCard>
+            </CardBody>
+          </SidebarCard>
+
           <SidebarCard>
             <CardHeader>
               <SidebarTitle>社区统计</SidebarTitle>
@@ -1158,6 +1316,60 @@ export const ForumPage = ({ onNavigate, currentUser }: ForumPageProps) => {
           </ShareModalBody>
         </ShareModalContent>
       </ShareModal>
+
+      {/* ========== ✅ 静音仓弹窗 ========== */}
+      <CreatePostModal isOpen={quietRoomOpen}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>🎧 静音仓 - 白噪音</ModalTitle>
+            <CloseButton onClick={closeQuietRoom}>
+              <X size={18} />
+            </CloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <NoiseGrid>
+              {whiteNoiseList.map(noise => (
+                <NoiseItem
+                  key={noise.id}
+                  active={currentNoise === noise.id}
+                  onClick={() => {
+                    setCurrentNoise(noise.id);
+                    setIsPlaying(true);
+                  }}
+                >
+                  <Headphones size={18} />
+                  <div style={{ fontSize: '12px', marginTop: '4px' }}>{noise.name}</div>
+                </NoiseItem>
+              ))}
+            </NoiseGrid>
+
+            {currentNoise && (
+              <NoisePlayer>
+                <div style={{ marginBottom: 8 }}>
+                  正在播放：{whiteNoiseList.find(n => n.id === currentNoise)?.name}
+                </div>
+                <PlayButton onClick={togglePlay}>
+                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                </PlayButton>
+                <VolumeBar>
+                  <Volume2 size={16} />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </VolumeBar>
+              </NoisePlayer>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </CreatePostModal>
+
+      <audio ref={audioRef} />
     </ForumContainer>
   );
 };
