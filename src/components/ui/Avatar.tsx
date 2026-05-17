@@ -6,6 +6,7 @@ interface AvatarProps {
   size?: 'sm' | 'md' | 'lg';
   name?: string;
   className?: string;
+  onClick?: () => void;
 }
 
 const sizeMap = {
@@ -38,11 +39,16 @@ const AvatarContainer = styled.div<{ size: string; fontSize: string }>`
   }
 `;
 
-export const Avatar = ({ size = 'md', name, className }: AvatarProps) => {
+export const Avatar = ({ size = 'md', name, className, onClick }: AvatarProps) => {
   const initials = name ? name.slice(0, 1) : '';
   
   return (
-    <AvatarContainer size={sizeMap[size]} fontSize={fontSizeMap[size]} className={className}>
+    <AvatarContainer 
+      size={sizeMap[size]} 
+      fontSize={fontSizeMap[size]} 
+      className={className}
+      onClick={onClick}
+    >
       {initials ? initials : <User size={size === 'sm' ? 16 : size === 'md' ? 20 : 24} />}
     </AvatarContainer>
   );
