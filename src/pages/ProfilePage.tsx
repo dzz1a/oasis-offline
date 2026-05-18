@@ -184,6 +184,8 @@ const ModalFooter = styled.div`
 interface ProfilePageProps {
   onNavigate: (page: string) => void;
   currentUser: User;
+  viewingUserId?: string | null;
+  viewingUsername?: string | null;
 }
 
 const ProfileContainer = styled.div`
@@ -534,7 +536,7 @@ interface FavoritePost {
   createdAt: Date;
 }
 
-export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
+export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUsername }: ProfilePageProps) => {
   const [user, setUser] = useState<User>(currentUser);
   const [emotions] = useState(mockEmotionRecords);
   const [stats, setStats] = useState({ likes: 0, posts: 0, followers: 0, following: 0 });
@@ -547,22 +549,49 @@ export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
   });
   const [newTag, setNewTag] = useState('');
   const [favorites, setFavorites] = useState<FavoritePost[]>([]);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
 
   useEffect(() => {
-    setUser(currentUser);
-    fetch(`http://localhost:5000/api/users/${currentUser.id}`, {
+    const isOwn = !viewingUserId || viewingUserId === currentUser.id;
+    setIsOwnProfile(isOwn);
+    
+    const targetUserId = isOwn ? currentUser.id : viewingUserId!;
+    
+    fetch(`http://localhost:5000/api/users/${targetUserId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(res => res.json())
     .then(data => {
       if (data.user) {
         setUser(data.user);
+        if (!isOwn && data.user.followers) {
+          setIsFollowing(data.user.followers.some((f: string) => f.toString() === currentUser.id));
+        }
       }
     })
     .catch(err => console.error('获取用户信息失败:', err));
 
-    fetchFavorites();
-  }, [currentUser]);
+    fetchStats(targetUserId);
+    
+    if (isOwn) {
+      fetchFavorites();
+    }
+  }, [currentUser, viewingUserId, viewingUsername]);
+
+  const fetchStats = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/stats/${userId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error('获取统计数据失败:', err);
+    }
+  };
 
   const fetchFavorites = async () => {
     try {
@@ -635,15 +664,43 @@ export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
     }));
   };
 
+  const handleFollow = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/follow/${user._id}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setIsFollowing(data.isFollowing);
+        setStats(prev => ({
+          ...prev,
+          followers: data.followersCount
+        }));
+      }
+    } catch (err) {
+      console.error('关注失败:', err);
+    }
+  };
+
+  const handleBack = () => {
+    onNavigate('forum');
+  };
+
   return (
     <ProfileContainer>
       <ProfileHeader>
         <AvatarSection>
           <AvatarWrapper>
             <Avatar>{user.username.slice(0, 1)}</Avatar>
-            <EditAvatarButton>
-              <Camera size={16} />
-            </EditAvatarButton>
+            {isOwnProfile && (
+              <EditAvatarButton>
+                <Camera size={16} />
+              </EditAvatarButton>
+            )}
           </AvatarWrapper>
           <UserInfo>
               <Username>{user.username}</Username>
@@ -664,14 +721,33 @@ export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
           </UserInfo>
         </AvatarSection>
         <ActionButtons>
-          <Button variant="outline" onClick={openEditModal}>
-            <Edit2 size={18} />
-            编辑资料
-          </Button>
-          <Button>
-            <Settings size={18} />
-            设置
-          </Button>
+          {isOwnProfile ? (
+            <>
+              <Button variant="outline" onClick={openEditModal}>
+                <Edit2 size={18} />
+                编辑资料
+              </Button>
+              <Button>
+                <Settings size={18} />
+                设置
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={handleBack}>
+                返回
+              </Button>
+              <Button 
+                onClick={handleFollow}
+                style={{ 
+                  background: isFollowing ? '#6b7280' : undefined,
+                  borderColor: isFollowing ? '#6b7280' : undefined
+                }}
+              >
+                {isFollowing ? '已关注' : '+ 关注'}
+              </Button>
+            </>
+          )}
         </ActionButtons>
       </ProfileHeader>
 
@@ -703,72 +779,77 @@ export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
       </StatsRow>
 
       <ProfileContent>
-        <MainContent>
-          <SectionCard>
-            <SectionHeader>
-              <SectionTitle>我的能量状态</SectionTitle>
-            </SectionHeader>
-            <CardBody>
-              <EnergyBar>
-                <EnergyFill level={user.energyLevel || 75} />
-              </EnergyBar>
-              <EnergyLevel>当前能量值: {user.energyLevel || 75}%</EnergyLevel>
-            </CardBody>
-          </SectionCard>
+        <>
+          <MainContent>
+            {isOwnProfile && (
+            <>
+              <SectionCard>
+                <SectionHeader>
+                  <SectionTitle>我的能量状态</SectionTitle>
+                </SectionHeader>
+                <CardBody>
+                  <EnergyBar>
+                    <EnergyFill level={user.energyLevel || 75} />
+                  </EnergyBar>
+                  <EnergyLevel>当前能量值: {user.energyLevel || 75}%</EnergyLevel>
+                </CardBody>
+              </SectionCard>
 
-          <SectionCard>
-            <SectionHeader>
-              <SectionTitle>情绪记录</SectionTitle>
-              <SectionAction>
-                查看全部
-                <ChevronRight size={16} />
-              </SectionAction>
-            </SectionHeader>
-            <CardBody>
-              <EmotionHistory>
-                {emotions.slice(0, 7).map((record) => {
-                  const emotionInfo = emotionLabels[record.emotion];
-                  return (
-                    <EmotionItem key={record.id}>
-                      <EmotionCircle color={emotionInfo.color}>
-                        <EmotionIcon color={emotionInfo.color} />
-                      </EmotionCircle>
-                      <EmotionLabel>{emotionInfo.label}</EmotionLabel>
-                      <EmotionDate>{record.createdAt.getDate()}日</EmotionDate>
-                    </EmotionItem>
-                  );
-                })}
-              </EmotionHistory>
-            </CardBody>
-          </SectionCard>
+              <SectionCard>
+                <SectionHeader>
+                  <SectionTitle>情绪记录</SectionTitle>
+                  <SectionAction>
+                    查看全部
+                    <ChevronRight size={16} />
+                  </SectionAction>
+                </SectionHeader>
+                <CardBody>
+                  <EmotionHistory>
+                    {emotions.slice(0, 7).map((record) => {
+                      const emotionInfo = emotionLabels[record.emotion];
+                      return (
+                        <EmotionItem key={record.id}>
+                          <EmotionCircle color={emotionInfo.color}>
+                            <EmotionIcon color={emotionInfo.color} />
+                          </EmotionCircle>
+                          <EmotionLabel>{emotionInfo.label}</EmotionLabel>
+                          <EmotionDate>{record.createdAt.getDate()}日</EmotionDate>
+                        </EmotionItem>
+                      );
+                    })}
+                  </EmotionHistory>
+                </CardBody>
+              </SectionCard>
 
-          <SectionCard>
-            <SectionHeader>
-              <SectionTitle>成就徽章</SectionTitle>
-            </SectionHeader>
-            <CardBody>
-              <div style={{ display: 'flex', gap: theme.spacing[4] }}>
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} style={{ textAlign: 'center', opacity: i <= 2 ? 1 : 0.4 }}>
-                    <div style={{ width: '64px', height: '64px', borderRadius: theme.borderRadius.xl, background: i <= 2 ? theme.colors.warm[100] : theme.colors.neutral[100], display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: theme.spacing[2] }}>
-                      <Award size={32} color={i <= 2 ? theme.colors.warm[500] : theme.colors.neutral[400]} />
-                    </div>
-                    <span style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[600] }}>{i <= 2 ? `第${i}周打卡` : '未解锁'}</span>
+              <SectionCard>
+                <SectionHeader>
+                  <SectionTitle>成就徽章</SectionTitle>
+                </SectionHeader>
+                <CardBody>
+                  <div style={{ display: 'flex', gap: theme.spacing[4] }}>
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} style={{ textAlign: 'center', opacity: i <= 2 ? 1 : 0.4 }}>
+                        <div style={{ width: '64px', height: '64px', borderRadius: theme.borderRadius.xl, background: i <= 2 ? theme.colors.warm[100] : theme.colors.neutral[100], display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: theme.spacing[2] }}>
+                          <Award size={32} color={i <= 2 ? theme.colors.warm[500] : theme.colors.neutral[400]} />
+                        </div>
+                        <span style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[600] }}>{i <= 2 ? `第${i}周打卡` : '未解锁'}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardBody>
-          </SectionCard>
+                </CardBody>
+              </SectionCard>
+            </>
+          )}
 
           <SectionCard>
             <SectionHeader>
-              <SectionTitle>我的收藏</SectionTitle>
+              <SectionTitle>{isOwnProfile ? '我的收藏' : `${user.username} 的收藏`}</SectionTitle>
             </SectionHeader>
             <CardBody>
               {favorites.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: theme.spacing[8], color: theme.colors.neutral[500] }}>
                   <Bookmark size={48} style={{ marginBottom: theme.spacing[3], opacity: 0.5 }} />
-                  <p>还没有收藏任何帖子</p>
+                  <p>{isOwnProfile ? '还没有收藏任何帖子' : `${user.username} 还没有收藏任何帖子`}</p>
                   <p style={{ fontSize: theme.fonts.sizes.sm }}>在绿洲社区中点击收藏按钮即可收藏喜欢的帖子</p>
                 </div>
               ) : (
@@ -804,31 +885,32 @@ export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
             </CardBody>
           </SectionCard>
         </MainContent>
+          </>
+          {isOwnProfile && (
+          <MenuSection>
+            <Card>
+              <CardBody>
+                {[
+                  { icon: Bell, title: '通知设置', desc: '管理通知偏好' },
+                  { icon: Shield, title: '隐私设置', desc: '控制数据和隐私' },
+                  { icon: Activity, title: '数据统计', desc: '查看使用统计' },
+                  { icon: Calendar, title: '日程管理', desc: '管理你的日程' },
+                ].map((item, index) => (
+                  <MenuItem key={index}>
+                    <MenuIcon>
+                      <item.icon size={20} />
+                    </MenuIcon>
+                    <MenuText>
+                      <MenuTitle>{item.title}</MenuTitle>
+                      <MenuDescription>{item.desc}</MenuDescription>
+                    </MenuText>
+                    <ChevronRight size={18} color={theme.colors.neutral[400]} />
+                  </MenuItem>
+                ))}
+              </CardBody>
+            </Card>
 
-        <MenuSection>
-          <Card>
-            <CardBody>
-              {[
-                { icon: Bell, title: '通知设置', desc: '管理通知偏好' },
-                { icon: Shield, title: '隐私设置', desc: '控制数据和隐私' },
-                { icon: Activity, title: '数据统计', desc: '查看使用统计' },
-                { icon: Calendar, title: '日程管理', desc: '管理你的日程' },
-              ].map((item, index) => (
-                <MenuItem key={index}>
-                  <MenuIcon>
-                    <item.icon size={20} />
-                  </MenuIcon>
-                  <MenuText>
-                    <MenuTitle>{item.title}</MenuTitle>
-                    <MenuDescription>{item.desc}</MenuDescription>
-                  </MenuText>
-                  <ChevronRight size={18} color={theme.colors.neutral[400]} />
-                </MenuItem>
-              ))}
-            </CardBody>
-          </Card>
-
-          <ContactCard>
+            <ContactCard>
             <CardBody>
               <ContactHeader>
                 <ContactIcon>
@@ -848,8 +930,9 @@ export const ProfilePage = ({ onNavigate, currentUser }: ProfilePageProps) => {
               </ContactItem>
             </CardBody>
           </ContactCard>
-        </MenuSection>
-      </ProfileContent>
+            </MenuSection>
+          )}
+        </ProfileContent>
 
       <ModalOverlay isOpen={isEditModalOpen}>
         <ModalContent>

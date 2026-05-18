@@ -1,6 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { TreeDeciduous, Menu, X, Search, Bell, User, LogOut } from 'lucide-react';
+
+import {
+  TreeDeciduous,
+  Menu,
+  X,
+  Bell,
+  User,
+  Search,
+  LogOut,
+} from 'lucide-react';
+
 import { theme } from '../../styles/theme';
 import { Avatar } from '../ui/Avatar';
 
@@ -15,52 +25,100 @@ const HeaderContainer = styled.header`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid ${theme.colors.neutral[100]};
-  box-shadow: ${theme.shadows.sm};
+
+  background: rgba(255, 255, 255, 0.72);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.06);
+
+  transition: all 0.3s ease;
 `;
 
 const HeaderContent = styled.div`
   max-width: 1200px;
   margin: 0 auto;
+
   padding: 0 ${theme.spacing[4]};
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+
+  height: 72px;
 `;
 
 const Logo = styled.div`
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[2]};
+  gap: ${theme.spacing[3]};
+
   cursor: pointer;
+
+  transition: all 0.25s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 `;
 
 const LogoIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: ${theme.borderRadius.lg};
-  background: linear-gradient(135deg, ${theme.colors.primary[400]} 0%, ${theme.colors.calm[400]} 100%);
+  width: 44px;
+  height: 44px;
+
+  border-radius: ${theme.borderRadius.xl};
+
+  background: linear-gradient(
+    135deg,
+    ${theme.colors.primary[400]} 0%,
+    ${theme.colors.calm[400]} 100%
+  );
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  box-shadow:
+    0 8px 20px rgba(99, 102, 241, 0.25);
 `;
 
 const LogoText = styled.h1`
   font-size: ${theme.fonts.sizes.xl};
   font-weight: ${theme.fonts.weights.bold};
-  background: linear-gradient(135deg, ${theme.colors.primary[600]} 0%, ${theme.colors.calm[600]} 100%);
+
+  background: linear-gradient(
+    135deg,
+    ${theme.colors.primary[600]} 0%,
+    ${theme.colors.calm[600]} 100%
+  );
+
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
 
 const Nav = styled.nav`
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[1]};
+  gap: ${theme.spacing[2]};
+
+  padding: ${theme.spacing[1]};
+  border-radius: ${theme.borderRadius.full};
+
+  background: rgba(255, 255, 255, 0.5);
+
+  border: 1px solid rgba(255, 255, 255, 0.6);
+
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.8);
 
   @media (max-width: 768px) {
     display: none;
@@ -68,22 +126,79 @@ const Nav = styled.nav`
 `;
 
 const NavLink = styled.button<{ active: boolean }>`
+  position: relative;
+
   padding: ${theme.spacing[2]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[600]};
-  background: transparent;
+
+  border-radius: ${theme.borderRadius.full};
+
   border: none;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
 
-  ${({ active }) => active && `
-    background-color: ${theme.colors.primary[100]};
-    color: ${theme.colors.primary[700]};
-  `}
+  font-weight: ${theme.fonts.weights.medium};
+  font-size: ${theme.fonts.sizes.sm};
 
-  &:hover:not(:active) {
-    background-color: ${theme.colors.neutral[100]};
+  transition: all 0.25s ease;
+
+  color: ${({ active }) =>
+    active
+      ? theme.colors.primary[700]
+      : theme.colors.neutral[600]};
+
+  background: ${({ active }) =>
+    active
+      ? `linear-gradient(
+          135deg,
+          ${theme.colors.primary[100]} 0%,
+          ${theme.colors.calm[100]} 100%
+        )`
+      : 'transparent'};
+
+  box-shadow: ${({ active }) =>
+    active
+      ? `0 4px 16px rgba(99, 102, 241, 0.18)`
+      : 'none'};
+
+  &:hover {
+    transform: translateY(-1px);
+
+    background: ${({ active }) =>
+      active
+        ? `linear-gradient(
+            135deg,
+            ${theme.colors.primary[100]} 0%,
+            ${theme.colors.calm[100]} 100%
+          )`
+        : theme.colors.neutral[100]};
+
+    color: ${theme.colors.neutral[800]};
+  }
+
+  &::after {
+    content: '';
+
+    position: absolute;
+
+    left: 20%;
+    right: 20%;
+    bottom: -6px;
+
+    height: 3px;
+
+    border-radius: 999px;
+
+    background: linear-gradient(
+      90deg,
+      ${theme.colors.primary[400]},
+      ${theme.colors.calm[400]}
+    );
+
+    opacity: ${({ active }) => (active ? 1 : 0)};
+
+    transform: scaleX(${({ active }) => (active ? 1 : 0.5)});
+
+    transition: all 0.25s ease;
   }
 `;
 
@@ -93,56 +208,117 @@ const Actions = styled.div`
   gap: ${theme.spacing[3]};
 `;
 
-const SearchInput = styled.input`
-  width: 200px;
-  padding: ${theme.spacing[2]} ${theme.spacing[4]};
-  padding-left: 36px;
-  border-radius: ${theme.borderRadius.full};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.sm};
-  background: ${theme.colors.neutral[50]} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.35-4.35'%3E%3C/path%3E%3C/svg%3E") no-repeat left 12px center;
-
-  &:focus {
-    border-color: ${theme.colors.primary[400]};
-    box-shadow: 0 0 0 3px ${theme.colors.primary[100]};
-  }
+const SearchWrapper = styled.div`
+  position: relative;
 
   @media (max-width: 768px) {
     display: none;
   }
 `;
 
+const SearchIcon = styled.div`
+  position: absolute;
+
+  left: 14px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: ${theme.colors.neutral[400]};
+`;
+
+const SearchInput = styled.input`
+  width: 220px;
+
+  padding: ${theme.spacing[2]} ${theme.spacing[4]};
+  padding-left: 42px;
+
+  border-radius: ${theme.borderRadius.full};
+
+  border: 1px solid rgba(255,255,255,0.6);
+
+  background: rgba(255,255,255,0.55);
+
+  font-size: ${theme.fonts.sizes.sm};
+
+  transition: all 0.25s ease;
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.8);
+
+  &:focus {
+    outline: none;
+
+    border-color: ${theme.colors.primary[300]};
+
+    transform: translateY(-1px);
+
+    box-shadow:
+      0 0 0 4px ${theme.colors.primary[100]},
+      0 8px 20px rgba(99,102,241,0.12);
+  }
+
+  &::placeholder {
+    color: ${theme.colors.neutral[400]};
+  }
+`;
+
 const ActionButton = styled.button`
-  width: 40px;
-  height: 40px;
-  border-radius: ${theme.borderRadius.md};
-  background: transparent;
-  border: none;
+  width: 42px;
+  height: 42px;
+
+  border-radius: ${theme.borderRadius.lg};
+
+  background: rgba(255,255,255,0.55);
+
+  border: 1px solid rgba(255,255,255,0.6);
+
   color: ${theme.colors.neutral[600]};
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
+
+  transition: all 0.25s ease;
 
   &:hover {
-    background-color: ${theme.colors.neutral[100]};
-    color: ${theme.colors.neutral[800]};
+    transform: translateY(-2px);
+
+    background: white;
+
+    color: ${theme.colors.primary[600]};
+
+    box-shadow:
+      0 8px 20px rgba(15,23,42,0.08);
   }
 `;
 
 const MobileMenuButton = styled.button`
   display: none;
-  width: 40px;
-  height: 40px;
-  border-radius: ${theme.borderRadius.md};
-  background: transparent;
-  border: none;
-  color: ${theme.colors.neutral[600]};
-  display: flex;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: ${theme.borderRadius.lg};
+
+  background: rgba(255,255,255,0.55);
+
+  border: 1px solid rgba(255,255,255,0.6);
+
+  color: ${theme.colors.neutral[700]};
+
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
+
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: white;
+  }
 
   @media (max-width: 768px) {
     display: flex;
@@ -150,76 +326,141 @@ const MobileMenuButton = styled.button`
 `;
 
 const MobileNav = styled.div<{ isOpen: boolean }>`
-  display: none;
   position: absolute;
-  top: 64px;
+
+  top: 72px;
   left: 0;
   right: 0;
-  background: white;
-  border-bottom: 1px solid ${theme.colors.neutral[100]};
+
   padding: ${theme.spacing[4]};
 
-  @media (max-width: 768px) {
-    display: ${({ isOpen }) => isOpen ? 'block' : 'none'};
+  background: rgba(255,255,255,0.82);
+
+  backdrop-filter: blur(18px);
+
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing[2]};
+
+  opacity: ${({ isOpen }) => (isOpen ? 1 : 0)};
+
+  transform: ${({ isOpen }) =>
+    isOpen
+      ? 'translateY(0)'
+      : 'translateY(-10px)'};
+
+  pointer-events: ${({ isOpen }) =>
+    isOpen ? 'auto' : 'none'};
+
+  transition: all 0.25s ease;
+
+  @media (min-width: 769px) {
+    display: none;
   }
 `;
 
 const MobileNavLink = styled.button<{ active: boolean }>`
-  display: block;
   width: 100%;
-  padding: ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[600]};
-  background: transparent;
+
+  padding: ${theme.spacing[3]} ${theme.spacing[4]};
+
+  border-radius: ${theme.borderRadius.lg};
+
   border: none;
-  cursor: pointer;
+
   text-align: left;
-  transition: all ${theme.transitions.fast};
 
-  ${({ active }) => active && `
-    background-color: ${theme.colors.primary[100]};
-    color: ${theme.colors.primary[700]};
-  `}
+  cursor: pointer;
 
-  &:hover:not(:active) {
-    background-color: ${theme.colors.neutral[100]};
+  font-weight: ${theme.fonts.weights.medium};
+
+  transition: all 0.25s ease;
+
+  color: ${({ active }) =>
+    active
+      ? theme.colors.primary[700]
+      : theme.colors.neutral[700]};
+
+  background: ${({ active }) =>
+    active
+      ? `linear-gradient(
+          135deg,
+          ${theme.colors.primary[100]} 0%,
+          ${theme.colors.calm[100]} 100%
+        )`
+      : 'transparent'};
+
+  &:hover {
+    background: ${theme.colors.neutral[100]};
   }
+`;
+
+const UserWrapper = styled.div`
+  position: relative;
 `;
 
 const UserMenu = styled.div`
   position: absolute;
-  top: 64px;
-  right: 20px;
-  background: white;
-  border-radius: ${theme.borderRadius.md};
-  box-shadow: ${theme.shadows.lg};
-  padding: ${theme.spacing[1]};
-  min-width: 180px;
+
+  top: 54px;
+  right: 0;
+
+  width: 180px;
+
+  padding: ${theme.spacing[2]};
+
+  border-radius: ${theme.borderRadius.xl};
+
+  background: rgba(255,255,255,0.9);
+
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.6);
+
+  box-shadow:
+    0 12px 30px rgba(15,23,42,0.08);
+
+  z-index: 999;
 `;
 
 const UserMenuItem = styled.button`
   width: 100%;
-  padding: ${theme.spacing[2]} ${theme.spacing[4]};
+
+  padding: ${theme.spacing[3]};
+
   border: none;
+
+  border-radius: ${theme.borderRadius.lg};
+
   background: transparent;
-  border-radius: ${theme.borderRadius.sm};
-  cursor: pointer;
+
   display: flex;
   align-items: center;
   gap: ${theme.spacing[2]};
-  color: ${theme.colors.neutral[600]};
-  font-size: ${theme.fonts.sizes.sm};
-  transition: all ${theme.transitions.fast};
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+
+  color: ${theme.colors.neutral[700]};
 
   &:hover {
-    background-color: ${theme.colors.neutral[100]};
+    background: ${theme.colors.neutral[100]};
   }
 `;
 
-export const Header = ({ currentUser, onNavChange, currentNav, onLogout }: HeaderProps) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export const Header = ({
+  currentUser,
+  onNavChange,
+  currentNav,
+  onLogout,
+}: HeaderProps) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navItems = [
     { id: 'home', label: '首页' },
@@ -230,13 +471,47 @@ export const Header = ({ currentUser, onNavChange, currentNav, onLogout }: Heade
     { id: 'profile', label: '自己' },
   ];
 
+  const handleNavigation = (nav: string) => {
+    onNavChange(nav);
+
+    setMobileOpen(false);
+    setUserMenuOpen(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [currentNav]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <HeaderContainer>
       <HeaderContent>
-        <Logo onClick={() => onNavChange('home')}>
+        <Logo onClick={() => handleNavigation('home')}>
           <LogoIcon>
             <TreeDeciduous size={20} color="white" />
           </LogoIcon>
+
           <LogoText>离线绿洲</LogoText>
         </Logo>
 
@@ -245,7 +520,7 @@ export const Header = ({ currentUser, onNavChange, currentNav, onLogout }: Heade
             <NavLink
               key={item.id}
               active={currentNav === item.id}
-              onClick={() => onNavChange(item.id)}
+              onClick={() => handleNavigation(item.id)}
             >
               {item.label}
             </NavLink>
@@ -253,47 +528,79 @@ export const Header = ({ currentUser, onNavChange, currentNav, onLogout }: Heade
         </Nav>
 
         <Actions>
-          <SearchInput placeholder="搜索..." />
+          <SearchWrapper>
+            <SearchIcon>
+              <Search size={16} />
+            </SearchIcon>
+
+            <SearchInput placeholder="搜索内容..." />
+          </SearchWrapper>
+
           <ActionButton>
-            <Bell size={20} />
+            <Bell size={18} />
           </ActionButton>
+
           {currentUser ? (
-            <div style={{ position: 'relative' }}>
-              <Avatar 
-                name={currentUser.username} 
-                size="sm" 
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-              />
+            <UserWrapper ref={userMenuRef}>
+              <div
+                onClick={() =>
+                  setUserMenuOpen(!userMenuOpen)
+                }
+                style={{ cursor: 'pointer' }}
+              >
+                <Avatar
+                  name={currentUser.username}
+                  size="sm"
+                />
+              </div>
+
               {userMenuOpen && (
                 <UserMenu>
-                  <UserMenuItem onClick={() => { onNavChange('profile'); setUserMenuOpen(false); }}>
+                  <UserMenuItem
+                    onClick={() =>
+                      handleNavigation('profile')
+                    }
+                  >
                     <User size={16} />
                     <span>个人中心</span>
                   </UserMenuItem>
-                  <UserMenuItem onClick={() => { onLogout?.(); setUserMenuOpen(false); }}>
+
+                  <UserMenuItem
+                    onClick={() => {
+                      onLogout?.();
+                      setUserMenuOpen(false);
+                    }}
+                  >
                     <LogOut size={16} />
                     <span>退出登录</span>
                   </UserMenuItem>
                 </UserMenu>
               )}
-            </div>
+            </UserWrapper>
           ) : (
             <ActionButton>
-              <User size={20} />
+              <User size={18} />
             </ActionButton>
           )}
-        </Actions>
 
-        <MobileMenuButton onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </MobileMenuButton>
+          <MobileMenuButton
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? (
+              <X size={20} />
+            ) : (
+              <Menu size={20} />
+            )}
+          </MobileMenuButton>
+        </Actions>
       </HeaderContent>
-      <MobileNav isOpen={mobileMenuOpen}>
+
+      <MobileNav isOpen={mobileOpen}>
         {navItems.map((item) => (
           <MobileNavLink
             key={item.id}
             active={currentNav === item.id}
-            onClick={() => { onNavChange(item.id); setMobileMenuOpen(false); }}
+            onClick={() => handleNavigation(item.id)}
           >
             {item.label}
           </MobileNavLink>
