@@ -1163,11 +1163,73 @@ export const ForumPage = ({
     useState<string | null>(null);
 
   const [copied, setCopied] = useState(false);
+  const [following, setFollowing] = useState<string[]>([]);
+  const [friends, setFriends] = useState<string[]>([]);
 
   useEffect(() => {
     fetchPosts();
     fetchFavorites();
+    fetchFollowing();
+    fetchFriends();
   }, []);
+
+  const fetchFollowing = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${currentUser._id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.user && data.user.following) {
+        setFollowing(data.user.following.map((f: string) => f.toString()));
+      }
+    } catch (err) {
+      console.error('获取关注列表失败:', err);
+    }
+  };
+
+  const fetchFriends = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/friends', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success && data.friends) {
+        setFriends(data.friends.map((f: any) => f._id.toString()));
+      }
+    } catch (err) {
+      console.error('获取好友列表失败:', err);
+    }
+  };
+
+  const handleFollow = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/follow/${userId}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFollowing(prev => 
+          data.isFollowing 
+            ? [...prev, userId]
+            : prev.filter(id => id !== userId)
+        );
+      } else {
+        if (data.message === '已经是好友，默认已关注') {
+          setFollowing(prev => [...new Set([...prev, userId])]);
+        }
+      }
+    } catch (err) {
+      console.error('关注失败:', err);
+    }
+  };
+
+  const handleViewProfile = (userId: string, username: string) => {
+    onNavigate(`profile/${userId}/${username}`);
+  };
 
   const totalComments = useMemo(() => {
     return posts.reduce(
@@ -1655,13 +1717,23 @@ export const ForumPage = ({
 
                 <PostHeaderStyled>
 
-                  <PostAvatar>
+                  <PostAvatar 
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => 
+                      handleViewProfile(post.author._id, post.author.username)
+                    }
+                  >
                     {post.author?.username?.slice(0, 1)}
                   </PostAvatar>
 
                   <PostAuthorInfo>
 
-                    <PostAuthor>
+                    <PostAuthor 
+                      style={{ cursor: 'pointer', color: '#6366f1' }}
+                      onClick={() => 
+                        handleViewProfile(post.author._id, post.author.username)
+                      }
+                    >
                       {post.author?.username}
                     </PostAuthor>
 
@@ -1676,7 +1748,7 @@ export const ForumPage = ({
                   </PostAuthorInfo>
 
                   {post.author?._id ===
-                    currentUser._id && (
+                    currentUser._id ? (
                     <DeleteButton
                       onClick={() =>
                         handleDeletePost(
@@ -1686,6 +1758,39 @@ export const ForumPage = ({
                     >
                       <Trash2 size={18} />
                     </DeleteButton>
+                  ) : friends.includes(post.author._id) ? (
+                    <button
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: '14px',
+                        border: '2px solid #6366f1',
+                        background: '#6366f1',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        cursor: 'default',
+                        transition: 'all 0.25s ease',
+                      }}
+                    >
+                      已关注
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleFollow(post.author._id)}
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: '14px',
+                        border: '2px solid #6366f1',
+                        background: following.includes(post.author._id) ? '#6366f1' : 'transparent',
+                        color: following.includes(post.author._id) ? 'white' : '#6366f1',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.25s ease',
+                      }}
+                    >
+                      {following.includes(post.author._id) ? '已关注' : '关注'}
+                    </button>
                   )}
 
                 </PostHeaderStyled>

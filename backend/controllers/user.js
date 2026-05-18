@@ -144,6 +144,116 @@ exports.toggleFavorite = async (req, res) => {
   }
 };
 
+exports.followUser = async (req, res) => {
+  try {
+    const Friend = require('../models/Friend');
+    const targetUserId = req.params.id;
+
+    if (targetUserId === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: '不能关注自己'
+      });
+    }
+
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    const isFriend = await Friend.findOne({
+      $or: [
+        { userId: req.user._id, friendId: targetUserId, status: 'accepted' },
+        { userId: targetUserId, friendId: req.user._id, status: 'accepted' }
+      ]
+    });
+
+    if (isFriend) {
+      return res.status(400).json({
+        success: false,
+        message: '已经是好友，默认已关注'
+      });
+    }
+
+    const currentUser = await User.findById(req.user._id);
+
+    const followingIndex = currentUser.following.findIndex(
+      id => id.toString() === targetUserId
+    );
+
+    if (followingIndex > -1) {
+      currentUser.following.splice(followingIndex, 1);
+      const followerIndex = targetUser.followers.findIndex(
+        id => id.toString() === req.user._id.toString()
+      );
+      if (followerIndex > -1) {
+        targetUser.followers.splice(followerIndex, 1);
+      }
+    } else {
+      currentUser.following.push(targetUserId);
+      targetUser.followers.push(req.user._id);
+    }
+
+    await currentUser.save();
+    await targetUser.save();
+
+    res.json({
+      success: true,
+      isFollowing: followingIndex === -1,
+      followersCount: targetUser.followers.length,
+      followingCount: currentUser.following.length
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+exports.getUserStats = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const ObjectId = require('mongoose').Types.ObjectId;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在'
+      });
+    }
+
+    const posts = await Post.find({ 
+      $or: [
+        { author: userId },
+        { author: new ObjectId(userId) },
+        { 'author._id': userId },
+        { 'author._id': new ObjectId(userId) }
+      ]
+    });
+    const totalLikes = posts.reduce((sum, post) => sum + post.likes.length, 0);
+
+    res.json({
+      success: true,
+      stats: {
+        likes: totalLikes,
+        posts: posts.length,
+        followers: user.followers.length,
+        following: user.following.length
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 exports.getFavorites = async (req, res) => {
   try {
     console.log('===== 获取收藏列表 START =====');

@@ -26,15 +26,20 @@ const HeaderContainer = styled.header`
   top: 0;
   z-index: 100;
 
-  background: rgba(255, 255, 255, 0.72);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(76, 150, 140, 0.82),
+      rgba(59, 151, 111, 0.78)
+    );
 
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 
   box-shadow:
-    0 8px 32px rgba(15, 23, 42, 0.06);
+    0 10px 40px rgba(0,0,0,0.22);
 
   transition: all 0.3s ease;
 `;
@@ -83,7 +88,7 @@ const LogoIcon = styled.div`
   justify-content: center;
 
   box-shadow:
-    0 8px 20px rgba(99, 102, 241, 0.25);
+    0 8px 20px rgba(99, 102, 241, 0.35);
 `;
 
 const LogoText = styled.h1`
@@ -92,13 +97,16 @@ const LogoText = styled.h1`
 
   background: linear-gradient(
     135deg,
-    ${theme.colors.primary[600]} 0%,
-    ${theme.colors.calm[600]} 100%
+    #ffffff 0%,
+    #c4b5fd 45%,
+    #93c5fd 100%
   );
 
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+
+  letter-spacing: 1px;
 
   @media (max-width: 768px) {
     display: none;
@@ -111,14 +119,15 @@ const Nav = styled.nav`
   gap: ${theme.spacing[2]};
 
   padding: ${theme.spacing[1]};
+
   border-radius: ${theme.borderRadius.full};
 
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255,255,255,0.06);
 
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255,255,255,0.08);
 
   box-shadow:
-    inset 0 1px 1px rgba(255,255,255,0.8);
+    inset 0 1px 1px rgba(255,255,255,0.08);
 
   @media (max-width: 768px) {
     display: none;
@@ -143,21 +152,21 @@ const NavLink = styled.button<{ active: boolean }>`
 
   color: ${({ active }) =>
     active
-      ? theme.colors.primary[700]
-      : theme.colors.neutral[600]};
+      ? '#ffffff'
+      : 'rgba(255,255,255,0.72)'};
 
   background: ${({ active }) =>
     active
       ? `linear-gradient(
           135deg,
-          ${theme.colors.primary[100]} 0%,
-          ${theme.colors.calm[100]} 100%
+          rgba(99,102,241,0.35) 0%,
+          rgba(96,165,250,0.28) 100%
         )`
       : 'transparent'};
 
   box-shadow: ${({ active }) =>
     active
-      ? `0 4px 16px rgba(99, 102, 241, 0.18)`
+      ? `0 4px 16px rgba(99,102,241,0.28)`
       : 'none'};
 
   &:hover {
@@ -167,12 +176,12 @@ const NavLink = styled.button<{ active: boolean }>`
       active
         ? `linear-gradient(
             135deg,
-            ${theme.colors.primary[100]} 0%,
-            ${theme.colors.calm[100]} 100%
+            rgba(99,102,241,0.35) 0%,
+            rgba(96,165,250,0.28) 100%
           )`
-        : theme.colors.neutral[100]};
+        : 'rgba(255,255,255,0.08)'};
 
-    color: ${theme.colors.neutral[800]};
+    color: white;
   }
 
   &::after {
@@ -224,7 +233,7 @@ const SearchIcon = styled.div`
 
   transform: translateY(-50%);
 
-  color: ${theme.colors.neutral[400]};
+  color: rgba(255,255,255,0.55);
 `;
 
 const SearchInput = styled.input`
@@ -235,31 +244,33 @@ const SearchInput = styled.input`
 
   border-radius: ${theme.borderRadius.full};
 
-  border: 1px solid rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
 
-  background: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.08);
+
+  color: white;
 
   font-size: ${theme.fonts.sizes.sm};
 
   transition: all 0.25s ease;
 
   box-shadow:
-    inset 0 1px 2px rgba(255,255,255,0.8);
+    inset 0 1px 2px rgba(255,255,255,0.08);
 
   &:focus {
     outline: none;
 
-    border-color: ${theme.colors.primary[300]};
+    border-color: rgba(99,102,241,0.4);
 
     transform: translateY(-1px);
 
     box-shadow:
-      0 0 0 4px ${theme.colors.primary[100]},
-      0 8px 20px rgba(99,102,241,0.12);
+      0 0 0 4px rgba(99,102,241,0.12),
+      0 8px 20px rgba(99,102,241,0.18);
   }
 
   &::placeholder {
-    color: ${theme.colors.neutral[400]};
+    color: rgba(255,255,255,0.45);
   }
 `;
 
@@ -269,11 +280,11 @@ const ActionButton = styled.button`
 
   border-radius: ${theme.borderRadius.lg};
 
-  background: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.08);
 
-  border: 1px solid rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
 
-  color: ${theme.colors.neutral[600]};
+  color: rgba(255,255,255,0.75);
 
   display: flex;
   align-items: center;
@@ -286,12 +297,12 @@ const ActionButton = styled.button`
   &:hover {
     transform: translateY(-2px);
 
-    background: white;
+    background: rgba(255,255,255,0.16);
 
-    color: ${theme.colors.primary[600]};
+    color: white;
 
     box-shadow:
-      0 8px 20px rgba(15,23,42,0.08);
+      0 8px 20px rgba(0,0,0,0.15);
   }
 `;
 
@@ -303,11 +314,11 @@ const MobileMenuButton = styled.button`
 
   border-radius: ${theme.borderRadius.lg};
 
-  background: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.08);
 
-  border: 1px solid rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
 
-  color: ${theme.colors.neutral[700]};
+  color: rgba(255,255,255,0.85);
 
   align-items: center;
   justify-content: center;
@@ -317,7 +328,7 @@ const MobileMenuButton = styled.button`
   transition: all 0.25s ease;
 
   &:hover {
-    background: white;
+    background: rgba(255,255,255,0.16);
   }
 
   @media (max-width: 768px) {
@@ -334,11 +345,16 @@ const MobileNav = styled.div<{ isOpen: boolean }>`
 
   padding: ${theme.spacing[4]};
 
-  background: rgba(255,255,255,0.82);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(15,23,42,0.95),
+      rgba(30,41,59,0.92)
+    );
 
   backdrop-filter: blur(18px);
 
-  border-bottom: 1px solid rgba(255,255,255,0.5);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 
   display: flex;
   flex-direction: column;
@@ -380,20 +396,20 @@ const MobileNavLink = styled.button<{ active: boolean }>`
 
   color: ${({ active }) =>
     active
-      ? theme.colors.primary[700]
-      : theme.colors.neutral[700]};
+      ? '#ffffff'
+      : 'rgba(255,255,255,0.75)'};
 
   background: ${({ active }) =>
     active
       ? `linear-gradient(
           135deg,
-          ${theme.colors.primary[100]} 0%,
-          ${theme.colors.calm[100]} 100%
+          rgba(99,102,241,0.35) 0%,
+          rgba(96,165,250,0.28) 100%
         )`
       : 'transparent'};
 
   &:hover {
-    background: ${theme.colors.neutral[100]};
+    background: rgba(255,255,255,0.08);
   }
 `;
 
@@ -413,14 +429,19 @@ const UserMenu = styled.div`
 
   border-radius: ${theme.borderRadius.xl};
 
-  background: rgba(255,255,255,0.9);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(15,23,42,0.96),
+      rgba(30,41,59,0.92)
+    );
 
   backdrop-filter: blur(18px);
 
-  border: 1px solid rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
 
   box-shadow:
-    0 12px 30px rgba(15,23,42,0.08);
+    0 12px 30px rgba(0,0,0,0.25);
 
   z-index: 999;
 `;
@@ -444,10 +465,10 @@ const UserMenuItem = styled.button`
 
   transition: all 0.2s ease;
 
-  color: ${theme.colors.neutral[700]};
+  color: rgba(255,255,255,0.82);
 
   &:hover {
-    background: ${theme.colors.neutral[100]};
+    background: rgba(255,255,255,0.08);
   }
 `;
 
@@ -457,7 +478,9 @@ export const Header = ({
   currentNav,
   onLogout,
 }: HeaderProps) => {
+
   const [mobileOpen, setMobileOpen] = useState(false);
+
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -467,14 +490,16 @@ export const Header = ({
     { id: 'forum', label: '绿洲' },
     { id: 'chat', label: '聊天' },
     { id: 'resources', label: '资源' },
-    { id: 'simulation', label: '模拟' },
+    { id: 'simulation', label: '解压' },
     { id: 'profile', label: '自己' },
   ];
 
   const handleNavigation = (nav: string) => {
+
     onNavChange(nav);
 
     setMobileOpen(false);
+
     setUserMenuOpen(false);
 
     window.scrollTo({
@@ -484,56 +509,96 @@ export const Header = ({
   };
 
   useEffect(() => {
+
     setMobileOpen(false);
+
   }, [currentNav]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+
+    const handleClickOutside = (
+      e: MouseEvent
+    ) => {
+
       if (
         userMenuRef.current &&
-        !userMenuRef.current.contains(e.target as Node)
+        !userMenuRef.current.contains(
+          e.target as Node
+        )
       ) {
         setUserMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside
+    );
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      );
     };
+
   }, []);
 
   return (
+
     <HeaderContainer>
+
       <HeaderContent>
-        <Logo onClick={() => handleNavigation('home')}>
+
+        <Logo
+          onClick={() =>
+            handleNavigation('home')
+          }
+        >
           <LogoIcon>
-            <TreeDeciduous size={20} color="white" />
+            <TreeDeciduous
+              size={20}
+              color="white"
+            />
           </LogoIcon>
 
-          <LogoText>离线绿洲</LogoText>
+          <LogoText>
+            离线绿洲
+          </LogoText>
         </Logo>
 
         <Nav>
+
           {navItems.map((item) => (
+
             <NavLink
               key={item.id}
-              active={currentNav === item.id}
-              onClick={() => handleNavigation(item.id)}
+              active={
+                currentNav === item.id
+              }
+              onClick={() =>
+                handleNavigation(item.id)
+              }
             >
               {item.label}
             </NavLink>
+
           ))}
+
         </Nav>
 
         <Actions>
+
           <SearchWrapper>
+
             <SearchIcon>
               <Search size={16} />
             </SearchIcon>
 
-            <SearchInput placeholder="搜索内容..." />
+            <SearchInput
+              placeholder="搜索内容..."
+            />
+
           </SearchWrapper>
 
           <ActionButton>
@@ -541,50 +606,97 @@ export const Header = ({
           </ActionButton>
 
           {currentUser ? (
+
             <UserWrapper ref={userMenuRef}>
+
               <div
                 onClick={() =>
-                  setUserMenuOpen(!userMenuOpen)
+                  setUserMenuOpen(
+                    !userMenuOpen
+                  )
                 }
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border:
+                    '2px solid rgba(255,255,255,0.18)',
+                  background:
+                    'rgba(255,255,255,0.06)',
+                }}
               >
                 <Avatar
-                  name={currentUser.username}
+                  name={
+                    currentUser.username
+                  }
                   size="sm"
                 />
               </div>
 
               {userMenuOpen && (
+
                 <UserMenu>
+
                   <UserMenuItem
                     onClick={() =>
-                      handleNavigation('profile')
+                      handleNavigation(
+                        'profile'
+                      )
                     }
                   >
                     <User size={16} />
-                    <span>个人中心</span>
+
+                    <span>
+                      个人中心
+                    </span>
+
                   </UserMenuItem>
 
                   <UserMenuItem
                     onClick={() => {
+
                       onLogout?.();
-                      setUserMenuOpen(false);
+
+                      setUserMenuOpen(
+                        false
+                      );
+
                     }}
                   >
                     <LogOut size={16} />
-                    <span>退出登录</span>
+
+                    <span>
+                      退出登录
+                    </span>
+
                   </UserMenuItem>
+
                 </UserMenu>
+
               )}
+
             </UserWrapper>
+
           ) : (
+
             <ActionButton>
               <User size={18} />
             </ActionButton>
+
           )}
 
           <MobileMenuButton
-            onClick={() => setMobileOpen(!mobileOpen)}
+            onClick={() =>
+              setMobileOpen(
+                !mobileOpen
+              )
+            }
           >
             {mobileOpen ? (
               <X size={20} />
@@ -592,20 +704,31 @@ export const Header = ({
               <Menu size={20} />
             )}
           </MobileMenuButton>
+
         </Actions>
+
       </HeaderContent>
 
       <MobileNav isOpen={mobileOpen}>
+
         {navItems.map((item) => (
+
           <MobileNavLink
             key={item.id}
-            active={currentNav === item.id}
-            onClick={() => handleNavigation(item.id)}
+            active={
+              currentNav === item.id
+            }
+            onClick={() =>
+              handleNavigation(item.id)
+            }
           >
             {item.label}
           </MobileNavLink>
+
         ))}
+
       </MobileNav>
+
     </HeaderContainer>
   );
 };

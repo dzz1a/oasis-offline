@@ -15,6 +15,15 @@ import { SimulationPage } from './pages/SimulationPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AuthPage } from './pages/AuthPage';
 
+// 导入的 7 个全新绿洲页面
+import { FAQ } from './pages/FAQ';
+import { Contact } from './pages/Contact';
+import { Feedback } from './pages/Feedback';
+import { AboutUs } from './pages/AboutUs';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
+import { TeamIntro } from './pages/TeamIntro';
+
 interface User {
   username: string;
   email: string;
@@ -24,6 +33,8 @@ interface User {
 
 function App() {
   const [currentNav, setCurrentNav] = useState('home');
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [viewingUsername, setViewingUsername] = useState<string | null>(null);
 
   const [currentUser, setCurrentUser] =
     useState<User | null>(null);
@@ -66,9 +77,19 @@ function App() {
   }, []);
 
   const handleNavigate = (page: string) => {
-    setCurrentNav(page);
+    if (page.startsWith('profile/')) {
+      const parts = page.split('/');
+      if (parts.length >= 3) {
+        setViewingUserId(parts[1]);
+        setViewingUsername(parts[2]);
+        setCurrentNav('profile');
+      }
+    } else {
+      setViewingUserId(null);
+      setViewingUsername(null);
+      setCurrentNav(page);
+    }
 
-    // 页面切换自动回顶部
     window.scrollTo({
       top: 0,
       behavior: 'smooth',
@@ -133,8 +154,34 @@ function App() {
           <ProfilePage
             onNavigate={handleNavigate}
             currentUser={currentUser!}
+            viewingUserId={viewingUserId}
+            viewingUsername={viewingUsername}
           />
         );
+
+      // --- 底部栏“支持”板块路由 ---
+      
+      case 'faq':
+        return <FAQ />;
+      
+      case 'contact':
+        return <Contact />;
+      
+      case 'feedback':
+        return <Feedback />;
+
+      // --- 底部栏“关于”板块路由 ---
+      case 'about':
+        return <AboutUs />;
+      
+      case 'privacy':
+        return <PrivacyPolicy />;
+      
+      case 'terms':
+        return <TermsOfService />;
+      
+      case 'team':
+        return <TeamIntro />;
 
       default:
         return (
@@ -203,6 +250,7 @@ function App() {
       />
     </ThemeProvider>
   );
+  
 }
 
 export default App;

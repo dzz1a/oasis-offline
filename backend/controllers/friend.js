@@ -54,6 +54,7 @@ exports.sendFriendRequest = async (req, res) => {
 exports.acceptFriendRequest = async (req, res) => {
   try {
     const { requestId } = req.body;
+    const User = require('../models/User');
 
     const request = await Friend.findById(requestId);
 
@@ -73,6 +74,28 @@ exports.acceptFriendRequest = async (req, res) => {
 
     request.status = 'accepted';
     await request.save();
+
+    const requesterId = request.userId;
+    const acceptorId = req.user._id;
+
+    const requester = await User.findById(requesterId);
+    const acceptor = await User.findById(acceptorId);
+
+    if (!requester.following.includes(acceptorId)) {
+      requester.following.push(acceptorId);
+    }
+    if (!requester.followers.includes(acceptorId)) {
+      requester.followers.push(acceptorId);
+    }
+    await requester.save();
+
+    if (!acceptor.following.includes(requesterId)) {
+      acceptor.following.push(requesterId);
+    }
+    if (!acceptor.followers.includes(requesterId)) {
+      acceptor.followers.push(requesterId);
+    }
+    await acceptor.save();
 
     res.json({
       success: true,
@@ -124,6 +147,7 @@ exports.rejectFriendRequest = async (req, res) => {
 exports.removeFriend = async (req, res) => {
   try {
     const { friendId } = req.body;
+    const User = require('../models/User');
 
     await Friend.deleteOne({
       $or: [
@@ -131,6 +155,31 @@ exports.removeFriend = async (req, res) => {
         { userId: friendId, friendId: req.user._id, status: 'accepted' }
       ]
     });
+
+    const currentUser = await User.findById(req.user._id);
+    const friendUser = await User.findById(friendId);
+
+    const currentUserFollowingIndex = currentUser.following.findIndex(id => id.toString() === friendId);
+    if (currentUserFollowingIndex > -1) {
+      currentUser.following.splice(currentUserFollowingIndex, 1);
+    }
+    const currentUserFollowersIndex = currentUser.followers.findIndex(id => id.toString() === friendId);
+    if (currentUserFollowersIndex > -1) {
+      currentUser.followers.splice(currentUserFollowersIndex, 1);
+    }
+    await currentUser.save();
+
+    if (friendUser) {
+      const friendFollowingIndex = friendUser.following.findIndex(id => id.toString() === req.user._id.toString());
+      if (friendFollowingIndex > -1) {
+        friendUser.following.splice(friendFollowingIndex, 1);
+      }
+      const friendFollowersIndex = friendUser.followers.findIndex(id => id.toString() === req.user._id.toString());
+      if (friendFollowersIndex > -1) {
+        friendUser.followers.splice(friendFollowersIndex, 1);
+      }
+      await friendUser.save();
+    }
 
     res.json({
       success: true,
