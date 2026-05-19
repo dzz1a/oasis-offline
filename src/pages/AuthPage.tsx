@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 
 interface AuthPageProps {
-  onLogin: (user: { username: string; email: string; id: string; _id: string }) => void;
+  onLogin: (user: { username: string; email: string; id: string; _id: string; energyLevel?: number }) => void;
 }
 
 const AuthContainer = styled.div`
@@ -103,7 +103,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         username: data.user.username,
         email: data.user.email,
         id: data.user._id,
-        _id: data.user._id
+        _id: data.user._id,
+        energyLevel: data.user.energyLevel
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : '网络错误');

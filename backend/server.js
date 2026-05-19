@@ -30,12 +30,24 @@ async function startServer() {
     const friendRoutes = require('./routes/friend');
     const chatRoutes = require('./routes/chat');
     const forumRoutes = require('./routes/forum');
+    const emotionRoutes = require('./routes/emotion');
+    const taskRoutes = require('./routes/task');
+    const badgeRoutes = require('./routes/badge');
+
+    const { initializeTasks } = require('./controllers/task');
+    const { initializeBadges } = require('./controllers/badge');
 
     app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
     app.use('/api/friends', friendRoutes);
     app.use('/api/chat', chatRoutes);
     app.use('/api/forum', forumRoutes);
+    app.use('/api/emotions', emotionRoutes);
+    app.use('/api/tasks', taskRoutes);
+    app.use('/api/badges', badgeRoutes);
+
+    await initializeTasks();
+    await initializeBadges();
 
     app.get('/', (req, res) => {
       res.json({

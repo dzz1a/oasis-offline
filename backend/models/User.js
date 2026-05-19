@@ -39,9 +39,8 @@ const userSchema = new mongoose.Schema({
   },
   energyLevel: {
     type: Number,
-    default: 75,
-    min: 0,
-    max: 100
+    default: 0,
+    min: 0
   },
   tags: {
     type: [String],

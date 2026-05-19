@@ -20,6 +20,7 @@ interface User {
   email: string;
   id: string;
   _id: string;
+  energyLevel?: number;
 }
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
             email: data.user.email,
             id: data.user._id,
             _id: data.user._id,
+            energyLevel: data.user.energyLevel,
           });
         }
       })

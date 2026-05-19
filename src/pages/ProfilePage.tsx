@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { Settings, Edit2, Heart, Activity, Calendar, Bell, Shield, ChevronRight, Camera, Award, MapPin, Mail, Phone, Star, X, Save, Plus, Trash2, Bookmark } from 'lucide-react';
+import { Settings, Edit2, Heart, Activity, Calendar, Bell, Shield, ChevronRight, Camera, Award, MapPin, Mail, Phone, Star, X, Save, Plus, Trash2, Bookmark, ChevronLeft } from 'lucide-react';
 import { theme } from '../styles/theme';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/Card';
 import { Tag } from '../components/ui/Tag';
 import { Badge } from '../components/ui/Badge';
 import { mockEmotionRecords, emotionLabels } from '../data/mockData';
+
+const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 
 interface User {
   username: string;
@@ -377,43 +379,377 @@ const EnergyLevel = styled.span`
   color: ${theme.colors.neutral[500]};
 `;
 
-const EmotionHistory = styled.div`
+const EmotionCalendar = styled.div`
   display: flex;
-  gap: ${theme.spacing[3]};
+  gap: ${theme.spacing[2]};
+  margin-top: ${theme.spacing[1]};
 `;
 
-const EmotionItem = styled.div`
+const CalendarSection = styled.div`
   flex: 1;
-  text-align: center;
+  min-width: 0;
 `;
 
-const EmotionCircle = styled.div<{ color: string }>`
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: ${({ color }) => color}20;
+const DetailSection = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing[2]};
+`;
+
+const CalendarHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${theme.spacing[2]};
+`;
+
+const CalendarNav = styled.button`
+  width: 22px;
+  height: 22px;
+  border-radius: ${theme.borderRadius.sm};
+  background: ${theme.colors.neutral[100]};
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto ${theme.spacing[2]};
+  cursor: pointer;
+  color: ${theme.colors.neutral[600]};
+  
+  &:hover {
+    background: ${theme.colors.neutral[200]};
+  }
 `;
 
-const EmotionIcon = styled.div<{ color: string }>`
-  width: 24px;
-  height: 24px;
+const CalendarTitle = styled.h3`
+  font-size: ${theme.fonts.sizes.sm};
+  font-weight: ${theme.fonts.weights.medium};
+  color: ${theme.colors.neutral[700]};
+`;
+
+const WeekDays = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 3px;
+`;
+
+const WeekDay = styled.div`
+  text-align: center;
+  font-size: 9px;
+  color: ${theme.colors.neutral[400]};
+  padding: 2px 0;
+`;
+
+const CalendarGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+`;
+
+const CalendarDay = styled.button<{ hasEmotion: boolean; emotionColor?: string; isToday?: boolean; isEmpty?: boolean; isSelected?: boolean }>`
+  aspect-ratio: 1;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: ${({ isEmpty, hasEmotion, emotionColor, isSelected }) => {
+    if (isEmpty) return 'transparent';
+    if (isSelected) return emotionColor ? `${emotionColor}30` : theme.colors.primary[100];
+    if (hasEmotion && emotionColor) return `${emotionColor}20`;
+    return theme.colors.neutral[50];
+  }};
+  cursor: ${({ isEmpty }) => isEmpty ? 'default' : 'pointer'};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  transition: all ${theme.transitions.fast};
+  padding: 1px;
+  
+  ${({ isSelected }) => isSelected && `
+    border-color: ${theme.colors.primary[500]};
+  `}
+  
+  &:hover:not(:disabled) {
+    background: ${theme.colors.neutral[100]};
+  }
+`;
+
+const DayNumber = styled.span`
+  font-size: 10px;
+  color: ${theme.colors.neutral[700]};
+`;
+
+const DayEmotion = styled.span`
+  font-size: 9px;
+`;
+
+const EmotionLegend = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${theme.spacing[1]};
+  margin-top: ${theme.spacing[1]};
+  justify-content: center;
+`;
+
+const LegendItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const LegendColor = styled.div<{ color: string }>`
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: ${({ color }) => color};
 `;
 
-const EmotionLabel = styled.span`
+const LegendLabel = styled.span`
+  font-size: 9px;
+  color: ${theme.colors.neutral[500]};
+`;
+
+const EmotionStats = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[2]};
+`;
+
+const EmotionStatItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const EmotionStatColor = styled.div<{ color: string }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${({ color }) => color};
+`;
+
+const EmotionStatCount = styled.span`
+  font-size: ${theme.fonts.sizes.xs};
+  color: ${theme.colors.neutral[600]};
+`;
+
+const EmotionDetail = styled.div`
+  padding: ${theme.spacing[2]};
+  background: ${theme.colors.neutral[50]};
+  border-radius: ${theme.borderRadius.sm};
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
+const DetailHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[2]};
+  margin-bottom: ${theme.spacing[2]};
+`;
+
+const DetailEmoji = styled.span`
+  font-size: 32px;
+`;
+
+const DetailInfo = styled.div``;
+
+const DetailDate = styled.span`
   font-size: ${theme.fonts.sizes.xs};
   color: ${theme.colors.neutral[500]};
+`;
+
+const DetailEmotion = styled.h4`
+  font-size: ${theme.fonts.sizes.sm};
+  font-weight: ${theme.fonts.weights.medium};
+  color: ${theme.colors.neutral[800]};
+`;
+
+const DetailNote = styled.p`
+  font-size: ${theme.fonts.sizes.xs};
+  color: ${theme.colors.neutral[600]};
+  line-height: 1.4;
+  flex: 1;
+`;
+
+const AddEmotionBtn = styled.button`
+  width: 100%;
+  padding: ${theme.spacing[2]};
+  border-radius: ${theme.borderRadius.sm};
+  border: 1px dashed ${theme.colors.neutral[300]};
+  background: transparent;
+  color: ${theme.colors.neutral[500]};
+  font-size: ${theme.fonts.sizes.xs};
+  cursor: pointer;
+  transition: all ${theme.transitions.fast};
+  
+  &:hover {
+    border-color: ${theme.colors.primary[400]};
+    color: ${theme.colors.primary[600]};
+  }
+`;
+
+const TaskSection = styled.div`
+  margin-bottom: ${theme.spacing[3]};
+`;
+
+const TaskCategory = styled.div`
+  margin-bottom: ${theme.spacing[2]};
+`;
+
+const TaskCategoryTitle = styled.h4`
+  font-size: ${theme.fonts.sizes.xs};
+  color: ${theme.colors.neutral[500]};
+  margin-bottom: ${theme.spacing[1]};
+  font-weight: ${theme.fonts.weights.medium};
+`;
+
+const TaskList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${theme.spacing[2]};
+`;
+
+const TaskItem = styled.button<{ completed: boolean; disabled?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[2]};
+  padding: ${theme.spacing[2]};
+  background: ${({ completed }) => completed ? theme.colors.primary[50] : theme.colors.neutral[50]};
+  border: 1px solid ${({ completed }) => completed ? theme.colors.primary[200] : theme.colors.neutral[200]};
+  border-radius: ${theme.borderRadius.sm};
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.5 : 1};
+  transition: all ${theme.transitions.fast};
+  
+  &:hover {
+    background: ${({ completed, disabled }) => disabled ? undefined : completed ? theme.colors.primary[100] : theme.colors.neutral[100]};
+  }
+`;
+
+const TaskIcon = styled.span`
+  font-size: 20px;
+`;
+
+const TaskInfo = styled.div`
+  flex: 1;
+  text-align: left;
+`;
+
+const TaskName = styled.span`
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[800]};
   display: block;
 `;
 
-const EmotionDate = styled.span`
+const TaskReward = styled.span`
   font-size: ${theme.fonts.sizes.xs};
-  color: ${theme.colors.neutral[400]};
+  color: ${theme.colors.primary[600]};
+`;
+
+const TaskStatus = styled.div`
+  font-size: ${theme.fonts.sizes.lg};
+`;
+
+const TaskStats = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: ${theme.spacing[2]};
+  background: ${theme.colors.primary[50]};
+  border-radius: ${theme.borderRadius.sm};
+  margin-bottom: ${theme.spacing[2]};
+`;
+
+const TaskStatItem = styled.div`
+  text-align: center;
+`;
+
+const TaskStatValue = styled.div`
+  font-size: ${theme.fonts.sizes.lg};
+  font-weight: ${theme.fonts.weights.bold};
+  color: ${theme.colors.primary[600]};
+`;
+
+const TaskStatLabel = styled.div`
+  font-size: ${theme.fonts.sizes.xs};
+  color: ${theme.colors.neutral[500]};
+`;
+
+const BadgeSection = styled.div`
+  margin-top: ${theme.spacing[2]};
+`;
+
+const BadgeCategory = styled.div`
+  margin-bottom: ${theme.spacing[3]};
+`;
+
+const BadgeCategoryTitle = styled.h4`
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[600]};
+  margin-bottom: ${theme.spacing[2]};
+  font-weight: ${theme.fonts.weights.medium};
+`;
+
+const BadgeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: ${theme.spacing[3]};
+`;
+
+const BadgeItem = styled.div<{ earned: boolean }>`
+  text-align: center;
+  opacity: ${({ earned }) => earned ? 1 : 0.4};
+  transition: opacity ${theme.transitions.fast};
+`;
+
+const BadgeIcon = styled.div<{ earned: boolean }>`
+  width: 64px;
+  height: 64px;
+  border-radius: ${theme.borderRadius.xl};
+  background: ${({ earned }) => earned ? theme.colors.warm[100] : theme.colors.neutral[100]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto ${theme.spacing[2]};
+  font-size: 32px;
+  box-shadow: ${({ earned }) => earned ? `0 4px 12px ${theme.colors.warm[200]}` : 'none'};
+`;
+
+const BadgeName = styled.div`
+  font-size: ${theme.fonts.sizes.xs};
+  color: ${theme.colors.neutral[700]};
+  font-weight: ${theme.fonts.weights.medium};
+`;
+
+const BadgeDescription = styled.div`
+  font-size: 9px;
+  color: ${theme.colors.neutral[500]};
+  margin-top: 2px;
+`;
+
+const BadgeStats = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: ${theme.spacing[3]};
+  padding: ${theme.spacing[2]} ${theme.spacing[3]};
+  background: ${theme.colors.warm[50]};
+  border-radius: ${theme.borderRadius.md};
+`;
+
+const BadgeCount = styled.div`
+  font-size: ${theme.fonts.sizes.base};
+  font-weight: ${theme.fonts.weights.bold};
+  color: ${theme.colors.warm[600]};
+`;
+
+const BadgeProgress = styled.div`
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[500]};
 `;
 
 const MenuSection = styled.div``;
@@ -538,7 +874,7 @@ interface FavoritePost {
 
 export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUsername }: ProfilePageProps) => {
   const [user, setUser] = useState<User>(currentUser);
-  const [emotions] = useState(mockEmotionRecords);
+  const [emotions, setEmotions] = useState<typeof mockEmotionRecords>([]);
   const [stats, setStats] = useState({ likes: 0, posts: 0, followers: 0, following: 0 });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -551,6 +887,225 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   const [favorites, setFavorites] = useState<FavoritePost[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
+  
+  const today = new Date();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedEmotion, setSelectedEmotion] = useState<{ label: string; color: string; emoji: string } | null>(null);
+  const [selectedNote, setSelectedNote] = useState<string | null>(null);
+  const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false);
+  const [editingEmotionId, setEditingEmotionId] = useState<string | null>(null);
+  const [newEmotion, setNewEmotion] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [isEmotionExpanded, setIsEmotionExpanded] = useState(true);
+  const [tasks, setTasks] = useState<any>({ physical: [], mental: [], social: [] });
+  const [taskStats, setTaskStats] = useState({ completedCount: 0, totalEnergy: 0, maxEnergy: 0, currentEnergy: 0 });
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [badges, setBadges] = useState<any>({ health: [], energy: [], emotion: [], streak: [] });
+  const [badgeStats, setBadgeStats] = useState({ earnedCount: 0, totalCount: 0 });
+  
+  const calendarDays = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const days = [];
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    return days;
+  };
+  
+  const handleDayClick = (day: number) => {
+    setSelectedDay(day);
+    const emotionRecord = emotions.find(
+      e => e.createdAt.getDate() === day && 
+           e.createdAt.getMonth() === currentMonth.getMonth() &&
+           e.createdAt.getFullYear() === currentMonth.getFullYear()
+    );
+    if (emotionRecord) {
+      setSelectedEmotion(emotionLabels[emotionRecord.emotion]);
+      setSelectedNote(emotionRecord.note || null);
+    } else {
+      setSelectedEmotion(null);
+      setSelectedNote(null);
+    }
+  };
+  
+  const openEmotionModal = () => {
+    const emotionRecord = selectedDay ? emotions.find(
+      e => e.createdAt.getDate() === selectedDay && 
+           e.createdAt.getMonth() === currentMonth.getMonth() &&
+           e.createdAt.getFullYear() === currentMonth.getFullYear()
+    ) : null;
+    
+    if (emotionRecord) {
+      setEditingEmotionId(emotionRecord.id);
+      setNewEmotion(emotionRecord.emotion);
+      setNewNote(emotionRecord.note || '');
+    } else {
+      setEditingEmotionId(null);
+      setNewEmotion('');
+      setNewNote('');
+    }
+    setIsEmotionModalOpen(true);
+  };
+  
+  const closeEmotionModal = () => {
+    setIsEmotionModalOpen(false);
+    setEditingEmotionId(null);
+    setNewEmotion('');
+    setNewNote('');
+  };
+  
+  const fetchEmotions = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/emotions?month=${currentMonth.getMonth() + 1}&year=${currentMonth.getFullYear()}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEmotions(data.data.map((record: any) => ({
+          ...record,
+          id: record._id,
+          createdAt: new Date(record.createdAt)
+        })));
+      }
+    } catch (error) {
+      console.error('获取情绪记录失败:', error);
+    }
+  };
+
+  const handleAddEmotion = async () => {
+    if (newEmotion) {
+      try {
+        if (editingEmotionId) {
+          const response = await fetch(`http://localhost:5000/api/emotions/${editingEmotionId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              emotion: newEmotion,
+              intensity: 5,
+              note: newNote
+            })
+          });
+          const data = await response.json();
+          if (data.success) {
+            const updatedRecord = {
+              ...data.data,
+              id: data.data._id,
+              createdAt: new Date(data.data.createdAt)
+            };
+            setEmotions(prev => prev.map(e => e.id === editingEmotionId ? updatedRecord : e));
+            closeEmotionModal();
+            if (selectedDay) {
+              setSelectedEmotion(emotionLabels[newEmotion as keyof typeof emotionLabels]);
+              setSelectedNote(newNote || null);
+            }
+          }
+        } else {
+          const targetDate = selectedDay ? 
+            new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDay) : 
+            new Date();
+          
+          const response = await fetch('http://localhost:5000/api/emotions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              emotion: newEmotion,
+              intensity: 5,
+              note: newNote,
+              date: targetDate.toISOString()
+            })
+          });
+          const data = await response.json();
+          if (data.success) {
+            const newRecord = {
+              ...data.data,
+              id: data.data._id,
+              createdAt: new Date(data.data.createdAt)
+            };
+            setEmotions(prev => [...prev, newRecord]);
+            closeEmotionModal();
+            const dayToSelect = selectedDay || today.getDate();
+            setSelectedDay(dayToSelect);
+            setSelectedEmotion(emotionLabels[newEmotion as keyof typeof emotionLabels]);
+            setSelectedNote(newNote || null);
+          }
+        }
+      } catch (error) {
+        console.error('处理情绪记录失败:', error);
+      }
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      setLoadingTasks(true);
+      const response = await fetch('http://localhost:5000/api/tasks/today', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        console.log('任务数据返回:', data.stats);
+        setTasks(data.tasks);
+        setTaskStats(data.stats);
+      }
+    } catch (err) {
+      console.error('获取任务失败:', err);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/tasks/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ taskId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUser((prev: any) => ({ ...prev, energyLevel: data.newEnergyLevel }));
+        fetchTasks();
+        fetchBadges();
+        alert(data.message);
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      console.error('完成任务失败:', err);
+    }
+  };
+
+  const fetchBadges = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/badges/user', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBadges(data.badges);
+        setBadgeStats({ earnedCount: data.earnedCount, totalCount: data.totalCount });
+      }
+    } catch (err) {
+      console.error('获取徽章失败:', err);
+    }
+  };
 
   useEffect(() => {
     const isOwn = !viewingUserId || viewingUserId === currentUser.id;
@@ -576,8 +1131,17 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     
     if (isOwn) {
       fetchFavorites();
+      fetchEmotions();
+      fetchTasks();
+      fetchBadges();
     }
   }, [currentUser, viewingUserId, viewingUsername]);
+
+  useEffect(() => {
+    if (isOwnProfile) {
+      fetchEmotions();
+    }
+  }, [currentMonth, isOwnProfile]);
 
   const fetchStats = async (userId: string) => {
     try {
@@ -785,57 +1349,274 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
             <>
               <SectionCard>
                 <SectionHeader>
-                  <SectionTitle>我的能量状态</SectionTitle>
+                  <SectionTitle>⚡ 身心健康任务</SectionTitle>
                 </SectionHeader>
                 <CardBody>
                   <EnergyBar>
-                    <EnergyFill level={user.energyLevel || 75} />
+                    <EnergyFill level={Math.min(100, taskStats.totalEnergy || 0)} />
                   </EnergyBar>
-                  <EnergyLevel>当前能量值: {user.energyLevel || 75}%</EnergyLevel>
+                  <EnergyLevel>今日能量: {taskStats.totalEnergy || 0}</EnergyLevel>
+                  
+                  <TaskStats>
+                    <TaskStatItem>
+                      <TaskStatValue>{taskStats.completedCount}</TaskStatValue>
+                      <TaskStatLabel>已完成</TaskStatLabel>
+                    </TaskStatItem>
+                    <TaskStatItem>
+                      <TaskStatValue>{taskStats.totalEnergy}</TaskStatValue>
+                      <TaskStatLabel>今日获得</TaskStatLabel>
+                    </TaskStatItem>
+                  </TaskStats>
+                  
+                  <TaskSection>
+                    <TaskCategory>
+                      <TaskCategoryTitle>🥗 身体健康</TaskCategoryTitle>
+                      <TaskList>
+                        {tasks.physical.map((task: any) => (
+                          <TaskItem
+                            key={task._id}
+                            completed={task.isCompleted}
+                            disabled={task.isCompleted}
+                            onClick={() => !task.isCompleted && handleCompleteTask(task._id)}
+                          >
+                            <TaskIcon>{task.icon}</TaskIcon>
+                            <TaskInfo>
+                              <TaskName>{task.name}</TaskName>
+                              <TaskReward>+{task.energyReward}能量</TaskReward>
+                            </TaskInfo>
+                            <TaskStatus>{task.isCompleted ? '✓' : ''}</TaskStatus>
+                          </TaskItem>
+                        ))}
+                      </TaskList>
+                    </TaskCategory>
+                    
+                    <TaskCategory>
+                      <TaskCategoryTitle>🧠 心理健康</TaskCategoryTitle>
+                      <TaskList>
+                        {tasks.mental.map((task: any) => (
+                          <TaskItem
+                            key={task._id}
+                            completed={task.isCompleted}
+                            disabled={task.isCompleted}
+                            onClick={() => !task.isCompleted && handleCompleteTask(task._id)}
+                          >
+                            <TaskIcon>{task.icon}</TaskIcon>
+                            <TaskInfo>
+                              <TaskName>{task.name}</TaskName>
+                              <TaskReward>+{task.energyReward}能量</TaskReward>
+                            </TaskInfo>
+                            <TaskStatus>{task.isCompleted ? '✓' : ''}</TaskStatus>
+                          </TaskItem>
+                        ))}
+                      </TaskList>
+                    </TaskCategory>
+                    
+                    <TaskCategory>
+                      <TaskCategoryTitle>💝 社交健康</TaskCategoryTitle>
+                      <TaskList>
+                        {tasks.social.map((task: any) => (
+                          <TaskItem
+                            key={task._id}
+                            completed={task.isCompleted}
+                            disabled={task.isCompleted}
+                            onClick={() => !task.isCompleted && handleCompleteTask(task._id)}
+                          >
+                            <TaskIcon>{task.icon}</TaskIcon>
+                            <TaskInfo>
+                              <TaskName>{task.name}</TaskName>
+                              <TaskReward>+{task.energyReward}能量</TaskReward>
+                            </TaskInfo>
+                            <TaskStatus>{task.isCompleted ? '✓' : ''}</TaskStatus>
+                          </TaskItem>
+                        ))}
+                      </TaskList>
+                    </TaskCategory>
+                  </TaskSection>
                 </CardBody>
               </SectionCard>
 
               <SectionCard>
-                <SectionHeader>
+                <SectionHeader onClick={() => setIsEmotionExpanded(!isEmotionExpanded)} style={{ cursor: 'pointer' }}>
                   <SectionTitle>情绪记录</SectionTitle>
-                  <SectionAction>
-                    查看全部
-                    <ChevronRight size={16} />
+                  <SectionAction style={{ display: 'flex', alignItems: 'center', gap: isEmotionExpanded ? theme.spacing[2] : theme.spacing[3] }}>
+                    {!isEmotionExpanded && (
+                      <EmotionStats>
+                        {Object.entries(emotionLabels).map(([key, value]) => {
+                          const count = emotions.filter(e => 
+                            e.emotion === key && 
+                            e.createdAt.getMonth() === currentMonth.getMonth() && 
+                            e.createdAt.getFullYear() === currentMonth.getFullYear()
+                          ).length;
+                          if (count === 0) return null;
+                          return (
+                            <EmotionStatItem key={key}>
+                              <EmotionStatColor color={value.color} />
+                              <EmotionStatCount>{count}</EmotionStatCount>
+                            </EmotionStatItem>
+                          );
+                        })}
+                      </EmotionStats>
+                    )}
+                    {isEmotionExpanded ? '收起' : '展开'}
+                    <ChevronRight size={16} style={{ transform: isEmotionExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                   </SectionAction>
                 </SectionHeader>
+                {isEmotionExpanded && (
                 <CardBody>
-                  <EmotionHistory>
-                    {emotions.slice(0, 7).map((record) => {
-                      const emotionInfo = emotionLabels[record.emotion];
-                      return (
-                        <EmotionItem key={record.id}>
-                          <EmotionCircle color={emotionInfo.color}>
-                            <EmotionIcon color={emotionInfo.color} />
-                          </EmotionCircle>
-                          <EmotionLabel>{emotionInfo.label}</EmotionLabel>
-                          <EmotionDate>{record.createdAt.getDate()}日</EmotionDate>
-                        </EmotionItem>
-                      );
-                    })}
-                  </EmotionHistory>
+                  <EmotionCalendar>
+                    <CalendarSection>
+                      <CalendarHeader>
+                        <CalendarNav onClick={(e) => { e.stopPropagation(); setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1)); }}>
+                          <ChevronLeft size={18} />
+                        </CalendarNav>
+                        <CalendarTitle>{currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月</CalendarTitle>
+                        <CalendarNav onClick={(e) => { e.stopPropagation(); setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1)); }}>
+                          <ChevronRight size={18} />
+                        </CalendarNav>
+                      </CalendarHeader>
+                      
+                      <WeekDays>
+                        {weekDays.map(day => (
+                          <WeekDay key={day}>{day}</WeekDay>
+                        ))}
+                      </WeekDays>
+                      
+                      <CalendarGrid>
+                        {calendarDays().map((day: number | null, index: number) => {
+                          if (!day) {
+                            return <div key={index} />;
+                          }
+                          const emotionRecord = emotions.find(
+                            e => e.createdAt.getDate() === day && 
+                                 e.createdAt.getMonth() === currentMonth.getMonth() &&
+                                 e.createdAt.getFullYear() === currentMonth.getFullYear()
+                          );
+                          const emotionInfo = emotionRecord ? emotionLabels[emotionRecord.emotion] : null;
+                          const isSelected = selectedDay === day;
+                          
+                          return (
+                            <CalendarDay
+                              key={day}
+                              hasEmotion={!!emotionRecord}
+                              emotionColor={emotionInfo?.color}
+                              isSelected={isSelected}
+                              onClick={(e) => { e.stopPropagation(); handleDayClick(day); }}
+                            >
+                              <DayNumber>{day}</DayNumber>
+                              {emotionInfo && <DayEmotion>{emotionInfo.emoji}</DayEmotion>}
+                            </CalendarDay>
+                          );
+                        })}
+                      </CalendarGrid>
+                      
+                      <EmotionLegend>
+                        {Object.entries(emotionLabels).map(([key, value]) => (
+                          <LegendItem key={key}>
+                            <LegendColor color={value.color} />
+                            <LegendLabel>{value.emoji} {value.label}</LegendLabel>
+                          </LegendItem>
+                        ))}
+                      </EmotionLegend>
+                    </CalendarSection>
+                    
+                    <DetailSection>
+                      {selectedDay ? (
+                        <EmotionDetail>
+                          <DetailHeader>
+                            <DetailEmoji>{selectedEmotion?.emoji || '📝'}</DetailEmoji>
+                            <DetailInfo>
+                              <DetailDate>{currentMonth.getFullYear()}年{currentMonth.getMonth() + 1}月{selectedDay}日</DetailDate>
+                              <DetailEmotion>{selectedEmotion?.label || '暂无记录'}</DetailEmotion>
+                            </DetailInfo>
+                          </DetailHeader>
+                          {selectedNote && <DetailNote>{selectedNote}</DetailNote>}
+                          {!selectedEmotion && <DetailNote>点击上方日历选择有记录的日期查看详情，或记录今日情绪</DetailNote>}
+                        </EmotionDetail>
+                      ) : (
+                        <EmotionDetail>
+                          <DetailHeader>
+                            <DetailEmoji>📅</DetailEmoji>
+                            <DetailInfo>
+                              <DetailEmotion>选择日期</DetailEmotion>
+                            </DetailInfo>
+                          </DetailHeader>
+                          <DetailNote>点击左侧日历中的日期查看当天情绪记录详情</DetailNote>
+                        </EmotionDetail>
+                      )}
+                      
+                      <AddEmotionBtn onClick={(e) => { e.stopPropagation(); openEmotionModal(); }}>
+                        <Plus size={18} style={{ marginRight: theme.spacing[2], display: 'inline' }} />
+                        {selectedDay ? (selectedEmotion ? '编辑情绪' : '记录情绪') : '记录今日情绪'}
+                      </AddEmotionBtn>
+                    </DetailSection>
+                  </EmotionCalendar>
                 </CardBody>
+                )}
               </SectionCard>
 
               <SectionCard>
                 <SectionHeader>
-                  <SectionTitle>成就徽章</SectionTitle>
+                  <SectionTitle>🏆 成就徽章</SectionTitle>
                 </SectionHeader>
                 <CardBody>
-                  <div style={{ display: 'flex', gap: theme.spacing[4] }}>
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} style={{ textAlign: 'center', opacity: i <= 2 ? 1 : 0.4 }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: theme.borderRadius.xl, background: i <= 2 ? theme.colors.warm[100] : theme.colors.neutral[100], display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: theme.spacing[2] }}>
-                          <Award size={32} color={i <= 2 ? theme.colors.warm[500] : theme.colors.neutral[400]} />
-                        </div>
-                        <span style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[600] }}>{i <= 2 ? `第${i}周打卡` : '未解锁'}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <BadgeStats>
+                    <BadgeCount>已获得 {badgeStats.earnedCount} / {badgeStats.totalCount}</BadgeCount>
+                    <BadgeProgress>继续加油解锁更多徽章！</BadgeProgress>
+                  </BadgeStats>
+                  
+                  <BadgeSection>
+                    <BadgeCategory>
+                      <BadgeCategoryTitle>🥗 身心健康</BadgeCategoryTitle>
+                      <BadgeGrid>
+                        {badges.health.map((badge: any) => (
+                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                            <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
+                            <BadgeName>{badge.name}</BadgeName>
+                            <BadgeDescription>{badge.description}</BadgeDescription>
+                          </BadgeItem>
+                        ))}
+                      </BadgeGrid>
+                    </BadgeCategory>
+                    
+                    <BadgeCategory>
+                      <BadgeCategoryTitle>⚡ 能量积累</BadgeCategoryTitle>
+                      <BadgeGrid>
+                        {badges.energy.map((badge: any) => (
+                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                            <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
+                            <BadgeName>{badge.name}</BadgeName>
+                            <BadgeDescription>{badge.description}</BadgeDescription>
+                          </BadgeItem>
+                        ))}
+                      </BadgeGrid>
+                    </BadgeCategory>
+                    
+                    <BadgeCategory>
+                      <BadgeCategoryTitle>😊 情绪记录</BadgeCategoryTitle>
+                      <BadgeGrid>
+                        {badges.emotion.map((badge: any) => (
+                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                            <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
+                            <BadgeName>{badge.name}</BadgeName>
+                            <BadgeDescription>{badge.description}</BadgeDescription>
+                          </BadgeItem>
+                        ))}
+                      </BadgeGrid>
+                    </BadgeCategory>
+                    
+                    <BadgeCategory>
+                      <BadgeCategoryTitle>📅 连续打卡</BadgeCategoryTitle>
+                      <BadgeGrid>
+                        {badges.streak.map((badge: any) => (
+                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                            <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
+                            <BadgeName>{badge.name}</BadgeName>
+                            <BadgeDescription>{badge.description}</BadgeDescription>
+                          </BadgeItem>
+                        ))}
+                      </BadgeGrid>
+                    </BadgeCategory>
+                  </BadgeSection>
                 </CardBody>
               </SectionCard>
             </>
@@ -1009,6 +1790,64 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
           <ModalFooter>
             <Button variant="outline" onClick={closeEditModal}>取消</Button>
             <Button onClick={handleSave}>
+              <Save size={18} />
+              保存
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </ModalOverlay>
+
+      <ModalOverlay isOpen={isEmotionModalOpen}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              {editingEmotionId ? '编辑情绪记录' : 
+               selectedDay ? `${currentMonth.getFullYear()}年${currentMonth.getMonth() + 1}月${selectedDay}日情绪` : '记录今日情绪'}
+            </ModalTitle>
+            <CloseButton onClick={closeEmotionModal}>
+              <X size={18} />
+            </CloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <FormGroup>
+              <FormLabel>选择情绪</FormLabel>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: theme.spacing[2] }}>
+                {Object.entries(emotionLabels).map(([key, value]) => (
+                  <button
+                    key={key}
+                    onClick={() => setNewEmotion(key)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: theme.spacing[1],
+                      padding: theme.spacing[3],
+                      borderRadius: theme.borderRadius.md,
+                      border: newEmotion === key ? `2px solid ${value.color}` : '2px solid transparent',
+                      background: newEmotion === key ? `${value.color}10` : theme.colors.neutral[50],
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{ fontSize: '24px' }}>{value.emoji}</span>
+                    <span style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[700] }}>{value.label}</span>
+                  </button>
+                ))}
+              </div>
+            </FormGroup>
+
+            <FormGroup>
+              <FormLabel>心情备注（可选）</FormLabel>
+              <FormTextarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="记录一下现在的心情..."
+              />
+            </FormGroup>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" onClick={closeEmotionModal}>取消</Button>
+            <Button onClick={handleAddEmotion} disabled={!newEmotion}>
               <Save size={18} />
               保存
             </Button>
