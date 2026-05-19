@@ -33,16 +33,18 @@ const Avatar = styled.div`
 `;
 
 const members = [
-  { name: "阿木 (Amos)", role: "绿洲发起人 / 首席园丁", desc: "立志用代码治愈一万个打工人的精神内耗。" },
-  { name: "晴天 (Sunny)", role: "产品经理 / 情绪观察员", desc: "擅长捕捉生活里细碎的美好与浪漫。" },
-  { name: "大白 (Baymax)", role: "前端开发 / 治愈系画师", desc: "把最温柔的代码和动画写进你的屏幕里。" }
+  { name: "丁子昂", role: "项目架构设计+代码实现" },
+  { name: "吴珂心", role: "前期方向设计 + 结构规划" },
+  { name: "尹璐 ", role: "概念图设计+模块划分"},
+  { name: "袁宇曈 ", role: "代码实现+项目审查" },
+  { name: "齐子明 ", role: "方向确定+特定功能实现" }
 ];
 
 export const TeamIntro = () => (
   <Container>
     <div style={{ textAlign: 'center' }}>
       <h1>🧑‍🌾 我们的团队</h1>
-      <p style={{ color: theme.colors.neutral[500], marginTop: '8px' }}>很高兴认识你！这就是默默守护着这片绿洲的奇妙团队。</p>
+      <p style={{ color: theme.colors.neutral[500], marginTop: '8px' }}>很高兴认识你！这就是默默维护着这片绿洲的团队。</p>
     </div>
     <Grid>
       {members.map((m, i) => (
@@ -50,7 +52,6 @@ export const TeamIntro = () => (
           <Avatar />
           <h3 style={{ color: theme.colors.neutral[800] }}>{m.name}</h3>
           <p style={{ color: theme.colors.primary[600], fontSize: '14px', fontWeight: 'bold', margin: '4px 0 12px 0' }}>{m.role}</p>
-          <p style={{ color: theme.colors.neutral[500], fontSize: '13px', lineHeight: 1.5 }}>{m.desc}</p>
         </MemberCard>
       ))}
     </Grid>

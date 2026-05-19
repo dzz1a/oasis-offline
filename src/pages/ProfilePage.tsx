@@ -2277,83 +2277,134 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
             </CardBody>
           </SectionCard>
         </MainContent>
-          </>
-          {isOwnProfile && (
-          <MenuSection>
-            <Card>
-              <CardBody>
-                {[
-                  { icon: Bell, title: '通知设置', desc: '管理通知偏好' },
-                  { icon: Shield, title: '隐私设置', desc: '控制数据和隐私' },
-                  { icon: Activity, title: '数据统计', desc: '查看使用统计' },
-                  { icon: Calendar, title: '日程管理', desc: '管理你的日程' },
-                ].map((item, index) => (
-                  <MenuItem key={index}>
-                    <MenuIcon>
-                      <item.icon size={20} />
-                    </MenuIcon>
-                    <MenuText>
-                      <MenuTitle>{item.title}</MenuTitle>
-                      <MenuDescription>{item.desc}</MenuDescription>
-                    </MenuText>
-                    <ChevronRight size={18} color={theme.colors.neutral[400]} />
-                  </MenuItem>
-                ))}
-              </CardBody>
-            </Card>
 
-            {isOwnProfile && (
-            <SidebarContent>
-              <SectionCard>
-                <SectionHeader>
-                  <SectionTitle>📝 待办事项</SectionTitle>
-                </SectionHeader>
-                <CardBody>
-                  <TodoInputWrapper>
-                    <TodoInput
-                      type="text"
-                      value={newTodoText}
-                      onChange={(e) => setNewTodoText(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addTodo()}
-                      placeholder="添加新的待办事项..."
-                    />
-                    <Button onClick={addTodo}>
-                      <Plus size={18} />
-                    </Button>
-                  </TodoInputWrapper>
-                  
-                  <TodoList>
-                    {todos.length > 0 ? (
-                      todos.map((todo) => (
-                        <TodoItem key={todo._id} completed={todo.completed}>
-                          <TodoCheckbox 
-                            checked={todo.completed}
-                            onClick={() => toggleTodo(todo._id, todo.completed)}
-                          >
-                            {todo.completed && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>}
-                          </TodoCheckbox>
-                          <TodoText completed={todo.completed}>{todo.title}</TodoText>
-                          <TodoDeleteBtn onClick={() => deleteTodo(todo._id)}>
-                            <Trash2 size={16} />
-                          </TodoDeleteBtn>
-                        </TodoItem>
-                      ))
-                    ) : (
-                      <TodoEmptyState>
-                        <Bookmark size={48} style={{ marginBottom: theme.spacing[3], opacity: 0.5 }} />
-                        <p>还没有待办事项</p>
-                        <p style={{ fontSize: theme.fonts.sizes.sm }}>添加一个新的任务开始吧！</p>
-                      </TodoEmptyState>
+{isOwnProfile && (
+  <MenuSection>
+    <Card>
+      <CardBody>
+        {[
+          { icon: Bell, title: '通知设置', desc: '管理通知偏好' },
+          { icon: Shield, title: '隐私设置', desc: '控制数据和隐私' },
+          { icon: Activity, title: '数据统计', desc: '查看使用统计' },
+          { icon: Calendar, title: '日程管理', desc: '管理你的日程' },
+        ].map((item, index) => (
+          <MenuItem key={index}>
+            <MenuIcon>
+              <item.icon size={20} />
+            </MenuIcon>
+
+            <MenuText>
+              <MenuTitle>{item.title}</MenuTitle>
+              <MenuDescription>{item.desc}</MenuDescription>
+            </MenuText>
+
+            <ChevronRight
+              size={18}
+              color={theme.colors.neutral[400]}
+            />
+          </MenuItem>
+        ))}
+      </CardBody>
+    </Card>
+
+    <SidebarContent>
+      <SectionCard>
+        <SectionHeader>
+          <SectionTitle>📝 待办事项</SectionTitle>
+        </SectionHeader>
+
+        <CardBody>
+          <TodoInputWrapper>
+            <TodoInput
+              type="text"
+              value={newTodoText}
+              onChange={(e) =>
+                setNewTodoText(e.target.value)
+              }
+              onKeyPress={(e) =>
+                e.key === 'Enter' && addTodo()
+              }
+              placeholder="添加新的待办事项..."
+            />
+
+            <Button onClick={addTodo}>
+              <Plus size={18} />
+            </Button>
+          </TodoInputWrapper>
+
+          <TodoList>
+            {todos.length > 0 ? (
+              todos.map((todo) => (
+                <TodoItem
+                  key={todo._id}
+                  completed={todo.completed}
+                >
+                  <TodoCheckbox
+                    checked={todo.completed}
+                    onClick={() =>
+                      toggleTodo(
+                        todo._id,
+                        todo.completed
+                      )
+                    }
+                  >
+                    {todo.completed && (
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     )}
-                  </TodoList>
-                </CardBody>
-              </SectionCard>
-            </SidebarContent>
-            )}
-      </ProfileContent>
+                  </TodoCheckbox>
 
+                  <TodoText completed={todo.completed}>
+                    {todo.title}
+                  </TodoText>
+
+                  <TodoDeleteBtn
+                    onClick={() => deleteTodo(todo._id)}
+                  >
+                    <Trash2 size={16} />
+                  </TodoDeleteBtn>
+                </TodoItem>
+              ))
+            ) : (
+              <TodoEmptyState>
+                <Bookmark
+                  size={48}
+                  style={{
+                    marginBottom: theme.spacing[3],
+                    opacity: 0.5,
+                  }}
+                />
+
+                <p>还没有待办事项</p>
+
+                <p
+                  style={{
+                    fontSize:
+                      theme.fonts.sizes.sm,
+                  }}
+                >
+                  添加一个新的任务开始吧！
+                </p>
+              </TodoEmptyState>
+            )}
+          </TodoList>
+        </CardBody>
+      </SectionCard>
+    </SidebarContent>
+  </MenuSection>
+)}
+
+</ProfileContent>
       <ModalOverlay isOpen={isEditModalOpen}>
         <ModalContent>
           <ModalHeader>
