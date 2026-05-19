@@ -1,35 +1,34 @@
-require('dotenv').config();
 const mongoose = require('mongoose');
-const User = require('./models/User');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
+
+const User = require('./models/User');
 
 async function resetPassword() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to MongoDB');
+    console.log('MongoDB Connected');
 
+    const email = 'hanhanangovo@qq.com';
     const newPassword = '123456';
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    const result1 = await User.findByIdAndUpdate(
-      '6a03d8857cf929e80dc423da',
-      { password: hashedPassword },
-      { new: true }
+    console.log('新密码哈希:', hashedPassword);
+    
+    const result = await User.updateOne(
+      { email },
+      { $set: { password: hashedPassword } }
     );
-    console.log(`✓ Updated user: ${result1.username}`);
 
-    const result2 = await User.findByIdAndUpdate(
-      '6a03dc307cf929e80dc423db',
-      { password: hashedPassword },
-      { new: true }
-    );
-    console.log(`✓ Updated user: ${result2.username}`);
+    if (result.modifiedCount === 1) {
+      console.log('密码重置成功！');
+    } else {
+      console.log('用户不存在或密码未修改');
+    }
 
-    console.log(`\n✅ Both users' passwords have been reset to: ${newPassword}`);
-
-    await mongoose.disconnect();
+    process.exit();
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('重置密码失败:', error);
     process.exit(1);
   }
 }

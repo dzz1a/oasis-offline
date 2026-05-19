@@ -1,421 +1,591 @@
-import { useState } from 'react';
-import styled from 'styled-components';
-import { Play, Clock, CheckCircle, User, MessageSquare, ChevronRight, Mic, MicOff, Video, VideoOff, X } from 'lucide-react';
-import { theme } from '../styles/theme';
-import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { mockSimulations } from '../data/mockData';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
+import styled, {
+  keyframes,
+} from 'styled-components';
+
+interface Bubble {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+
+  dx: number;
+  dy: number;
+}
+
+const GAME_DURATION = 30;
+
+const floatBg = keyframes`
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+`;
+
+const Container = styled.div`
+  position: relative;
+
+  width: 100%;
+  height: 100vh;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(255,255,255,0.35),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(147,197,253,0.25),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      #dbeafe 0%,
+      #c4b5fd 45%,
+      #fbcfe8 100%
+    );
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const FloatingGlow = styled.div`
+  position: absolute;
+
+  width: 600px;
+  height: 600px;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,0.08);
+
+  filter: blur(80px);
+
+  animation: ${floatBg} 8s ease-in-out infinite;
+`;
+
+const TopTitle = styled.div`
+  position: absolute;
+
+  top: 24px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  z-index: 12;
+
+  padding: 14px 28px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.4);
+
+  backdrop-filter: blur(18px);
+
+  color: #5b21b6;
+
+  font-size: 24px;
+  font-weight: 800;
+
+  letter-spacing: 2px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.08);
+`;
+
+const UI = styled.div`
+  position: absolute;
+
+  top: 24px;
+  left: 24px;
+
+  z-index: 10;
+
+  display: flex;
+  gap: 18px;
+`;
+
+const InfoCard = styled.div`
+  padding: 14px 22px;
+
+  border-radius: 22px;
+
+  background: rgba(255,255,255,0.55);
+
+  backdrop-filter: blur(18px);
+
+  color: #4c1d95;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.12);
+`;
+
+const BubbleStyled = styled.div<{
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}>`
+  position: absolute;
+
+  left: ${({ x }) => x}px;
+  top: ${({ y }) => y}px;
+
+  width: ${({ size }) => size}px;
+  height: ${({ size }) => size}px;
+
+  border-radius: 50%;
+
+  cursor: pointer;
+
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255,255,255,0.95),
+      ${({ color }) => color}
+    );
+
+  box-shadow:
+    inset -8px -12px 18px rgba(255,255,255,0.25),
+    inset 10px 12px 20px rgba(255,255,255,0.35),
+    0 12px 24px rgba(255,255,255,0.2);
+
+  animation:
+    ${floatBg} 3s ease-in-out infinite;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.2s ease;
+
+  &:hover {
+    transform: scale(1.08);
+  }
+
+  &::before {
+    content: '';
+
+    position: absolute;
+
+    top: 18%;
+    left: 22%;
+
+    width: 20%;
+    height: 20%;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,0.8);
+
+    filter: blur(2px);
+  }
+`;
+
+const StartScreen = styled.div`
+  z-index: 20;
+
+  text-align: center;
+
+  padding: 48px;
+
+  border-radius: 32px;
+
+  background: rgba(255,255,255,0.18);
+
+  backdrop-filter: blur(20px);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.15);
+
+  color: #4c1d95;
+`;
+
+const Title = styled.h1`
+  font-size: 4rem;
+
+  margin-bottom: 18px;
+
+  font-weight: 800;
+`;
+
+const Desc = styled.p`
+  font-size: 1.1rem;
+
+  line-height: 1.8;
+
+  margin-bottom: 32px;
+
+  opacity: 0.92;
+`;
+
+const StartButton = styled.button`
+  padding: 16px 34px;
+
+  border: none;
+
+  border-radius: 999px;
+
+  background: white;
+
+  color: #7c3aed;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+
+  &:hover {
+    transform: translateY(-4px) scale(1.03);
+  }
+`;
+
+const EndScreen = styled(StartScreen)``;
+
+const colors = [
+  'rgba(147,197,253,0.75)',
+  'rgba(196,181,253,0.75)',
+  'rgba(251,207,232,0.75)',
+  'rgba(165,243,252,0.75)',
+  'rgba(253,224,71,0.65)',
+];
 
 interface SimulationPageProps {
   onNavigate: (page: string) => void;
 }
 
-const SimulationContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: ${theme.spacing[6]} ${theme.spacing[4]};
-`;
+export const SimulationPage = ({
+  onNavigate,
+}: SimulationPageProps) => {
 
-const SimulationHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${theme.spacing[6]};
-`;
+  const [bubbles, setBubbles] =
+    useState<Bubble[]>([]);
 
-const SimulationTitle = styled.h1`
-  font-size: ${theme.fonts.sizes['2xl']};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-`;
+  const [score, setScore] =
+    useState(0);
 
-const SimulationsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: ${theme.spacing[6]};
-  margin-bottom: ${theme.spacing[8]};
-`;
+  const [timeLeft, setTimeLeft] =
+    useState(GAME_DURATION);
 
-const SimulationCard = styled(Card)`
-  cursor: pointer;
-`;
+  const [gameStarted, setGameStarted] =
+    useState(false);
 
-const SimulationIcon = styled.div`
-  width: 80px;
-  height: 80px;
-  border-radius: ${theme.borderRadius.xl};
-  background: linear-gradient(135deg, ${theme.colors.warm[100]} 0%, ${theme.colors.primary[100]} 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: ${theme.spacing[4]};
-`;
+  const [gameOver, setGameOver] =
+    useState(false);
 
-const SimulationType = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing[2]};
-  margin-bottom: ${theme.spacing[3]};
-`;
+  const idRef = useRef(0);
 
-const TypeBadge = styled(Badge)<{ type: string }>`
-  background: ${({ type }) => {
-    if (type === 'interview') return theme.colors.calm[500];
-    if (type === 'social') return theme.colors.primary[500];
-    return theme.colors.warning[500];
-  }};
-`;
+  useEffect(() => {
 
-const TypeLabel = styled.span`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[500]};
-`;
-
-const SimulationCardTitle = styled.h3`
-  font-size: ${theme.fonts.sizes.lg};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-  margin-bottom: ${theme.spacing[2]};
-`;
-
-const SimulationDescription = styled.p`
-  color: ${theme.colors.neutral[600]};
-  margin-bottom: ${theme.spacing[4]};
-`;
-
-const SimulationDuration = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing[2]};
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[500]};
-`;
-
-const SimulationModal = styled.div<{ isOpen: boolean }>`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: ${({ isOpen }) => isOpen ? 1 : 0};
-  visibility: ${({ isOpen }) => isOpen ? 'visible' : 'hidden'};
-  transition: all ${theme.transitions.normal};
-`;
-
-const ModalContent = styled.div`
-  background: white;
-  border-radius: ${theme.borderRadius.xl};
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: ${theme.spacing[4]} ${theme.spacing[6]};
-  border-bottom: 1px solid ${theme.colors.neutral[100]};
-`;
-
-const ModalTitle = styled.h2`
-  font-size: ${theme.fonts.sizes.xl};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-`;
-
-const CloseButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.neutral[100]};
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all ${theme.transitions.fast};
-
-  &:hover {
-    background: ${theme.colors.neutral[200]};
-  }
-`;
-
-const VideoArea = styled.div`
-  background: ${theme.colors.neutral[900]};
-  height: 400px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const VideoOverlay = styled.div`
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const StartButton = styled(Button)`
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  padding: 0;
-  font-size: ${theme.fonts.sizes.xl};
-`;
-
-const ScenarioInfo = styled(Card)`
-  margin: ${theme.spacing[4]};
-`;
-
-const ScenarioTitle = styled.h3`
-  font-size: ${theme.fonts.sizes.lg};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-  margin-bottom: ${theme.spacing[3]};
-`;
-
-const ScenarioText = styled.p`
-  color: ${theme.colors.neutral[600]};
-  line-height: 1.8;
-`;
-
-const ControlsBar = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: ${theme.spacing[4]};
-  padding: ${theme.spacing[4]};
-`;
-
-const ControlButton = styled.button<{ active?: boolean; danger?: boolean }>`
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all ${theme.transitions.fast};
-
-  ${({ active, danger }) => {
-    if (danger) {
-      return `
-        background: ${theme.colors.danger[500]};
-        color: white;
-        &:hover {
-          background: ${theme.colors.danger[600]};
-        }
-      `;
+    if (!gameStarted || gameOver) {
+      return;
     }
-    return active
-      ? `
-        background: ${theme.colors.primary[500]};
-        color: white;
-      `
-      : `
-        background: ${theme.colors.neutral[100]};
-        color: ${theme.colors.neutral[600]};
-        &:hover {
-          background: ${theme.colors.neutral[200]};
+
+    const timer = setInterval(() => {
+
+      setTimeLeft((prev) => {
+
+        if (prev <= 1) {
+
+          clearInterval(timer);
+
+          setGameOver(true);
+
+          return 0;
         }
-      `;
-  }}
-`;
 
-const FeedbackSection = styled.div`
-  padding: ${theme.spacing[4]} ${theme.spacing[6]};
-  background: ${theme.colors.neutral[50]};
-`;
+        return prev - 1;
+      });
 
-const FeedbackTitle = styled.h3`
-  font-size: ${theme.fonts.sizes.lg};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-  margin-bottom: ${theme.spacing[4]};
-`;
+    }, 1000);
 
-const FeedbackCard = styled(Card)`
-  margin-bottom: ${theme.spacing[4]};
-`;
+    return () => clearInterval(timer);
 
-const FeedbackItem = styled.div`
-  display: flex;
-  gap: ${theme.spacing[3]};
-  padding: ${theme.spacing[3]} 0;
-`;
+  }, [gameStarted, gameOver]);
 
-const FeedbackIcon = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.success[100]};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
+  useEffect(() => {
 
-const FeedbackContent = styled.div``;
+    if (!gameStarted || gameOver) {
+      return;
+    }
 
-const FeedbackLabel = styled.span`
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
-`;
+    const interval = setInterval(() => {
 
-const FeedbackText = styled.p`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[600]};
-`;
+      createBubble();
 
-export const SimulationPage = ({ onNavigate }: SimulationPageProps) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedSimulation, setSelectedSimulation] = useState(mockSimulations[0]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isVideoOn, setIsVideoOn] = useState(true);
+    }, 350);
 
-  const handleStartSimulation = (simulation: typeof mockSimulations[0]) => {
-    setSelectedSimulation(simulation);
-    setIsModalOpen(true);
+    return () => clearInterval(interval);
+
+  }, [gameStarted, gameOver]);
+
+  useEffect(() => {
+
+    if (!gameStarted || gameOver) {
+      return;
+    }
+
+    const moveInterval = setInterval(() => {
+
+      setBubbles((prev) =>
+        prev
+          .map((bubble) => ({
+            ...bubble,
+            x: bubble.x + bubble.dx,
+            y: bubble.y + bubble.dy,
+          }))
+          .filter(
+            (bubble) =>
+              bubble.x > -150 &&
+              bubble.x <
+                window.innerWidth + 150 &&
+              bubble.y > -150 &&
+              bubble.y <
+                window.innerHeight + 150
+          )
+      );
+
+    }, 16);
+
+    return () =>
+      clearInterval(moveInterval);
+
+  }, [gameStarted, gameOver]);
+
+  const createBubble = () => {
+
+    const size =
+      Math.random() * 70 + 40;
+
+    const side =
+      Math.floor(Math.random() * 4);
+
+    let x = 0;
+    let y = 0;
+
+    let dx = 0;
+    let dy = 0;
+
+    const speed =
+      Math.random() * 1.5 + 0.8;
+
+    if (side === 0) {
+
+      x = -size;
+
+      y =
+        Math.random() *
+        window.innerHeight;
+
+      dx = speed;
+
+      dy =
+        (Math.random() - 0.5) * 1.2;
+
+    } else if (side === 1) {
+
+      x = window.innerWidth + size;
+
+      y =
+        Math.random() *
+        window.innerHeight;
+
+      dx = -speed;
+
+      dy =
+        (Math.random() - 0.5) * 1.2;
+
+    } else if (side === 2) {
+
+      x =
+        Math.random() *
+        window.innerWidth;
+
+      y = -size;
+
+      dx =
+        (Math.random() - 0.5) * 1.2;
+
+      dy = speed;
+
+    } else {
+
+      x =
+        Math.random() *
+        window.innerWidth;
+
+      y =
+        window.innerHeight + size;
+
+      dx =
+        (Math.random() - 0.5) * 1.2;
+
+      dy = -speed;
+    }
+
+    const bubble: Bubble = {
+      id: idRef.current++,
+      x,
+      y,
+      size,
+      color:
+        colors[
+          Math.floor(
+            Math.random() *
+            colors.length
+          )
+        ],
+      dx,
+      dy,
+    };
+
+    setBubbles((prev) => [
+      ...prev,
+      bubble,
+    ]);
   };
 
-  const typeLabels: Record<string, string> = {
-    interview: '面试模拟',
-    social: '社交模拟',
-    stress: '压力模拟',
+  const popBubble = (id: number) => {
+
+    const target =
+      bubbles.find(
+        (bubble) => bubble.id === id
+      );
+
+    if (!target) {
+      return;
+    }
+
+    const gained =
+      Math.floor(target.size / 10);
+
+    setScore((prev) => prev + gained);
+
+    setBubbles((prev) =>
+      prev.filter(
+        (bubble) => bubble.id !== id
+      )
+    );
+  };
+
+  const startGame = () => {
+
+    setScore(0);
+
+    setTimeLeft(GAME_DURATION);
+
+    setBubbles([]);
+
+    setGameOver(false);
+
+    setGameStarted(true);
   };
 
   return (
-    <SimulationContainer>
-      <SimulationHeader>
-        <SimulationTitle>情景模拟</SimulationTitle>
-      </SimulationHeader>
 
-      <SimulationsGrid>
-        {mockSimulations.map((simulation) => (
-          <SimulationCard key={simulation.id} hoverable onClick={() => handleStartSimulation(simulation)}>
-            <CardBody>
-              <SimulationIcon>
-                <Play size={32} color={theme.colors.primary[600]} />
-              </SimulationIcon>
-              <SimulationType>
-                <TypeBadge type={simulation.type}>{typeLabels[simulation.type]}</TypeBadge>
-              </SimulationType>
-              <SimulationCardTitle>{simulation.title}</SimulationCardTitle>
-              <SimulationDescription>{simulation.description}</SimulationDescription>
-              <SimulationDuration>
-                <Clock size={16} />
-                预计时长: {simulation.duration} 分钟
-              </SimulationDuration>
-            </CardBody>
-            <CardFooter>
-              <Button variant="outline" fullWidth>
-                开始模拟
-                <ChevronRight size={18} />
-              </Button>
-            </CardFooter>
-          </SimulationCard>
+    <Container>
+
+      <FloatingGlow />
+
+      <TopTitle>
+        解压小游戏
+      </TopTitle>
+
+      {gameStarted && !gameOver && (
+
+        <UI>
+
+          <InfoCard>
+            分数：{score}
+          </InfoCard>
+
+          <InfoCard>
+            剩余时间：{timeLeft}s
+          </InfoCard>
+
+        </UI>
+      )}
+
+      {!gameStarted && (
+
+        <StartScreen>
+
+          <Title>
+            泡泡疗愈
+          </Title>
+
+          <Desc>
+            点击飘来的泡泡获得分数。<br />
+            放空一下自己吧。
+          </Desc>
+
+          <StartButton
+            onClick={startGame}
+          >
+            开始游戏
+          </StartButton>
+
+        </StartScreen>
+      )}
+
+      {gameOver && (
+
+        <EndScreen>
+
+          <Title>
+            游戏结束
+          </Title>
+
+          <Desc>
+            你获得了 <b>{score}</b> 分
+          </Desc>
+
+          <StartButton
+            onClick={startGame}
+          >
+            再玩一次
+          </StartButton>
+
+        </EndScreen>
+      )}
+
+      {gameStarted &&
+        !gameOver &&
+        bubbles.map((bubble) => (
+
+          <BubbleStyled
+            key={bubble.id}
+            x={bubble.x}
+            y={bubble.y}
+            size={bubble.size}
+            color={bubble.color}
+            onClick={() =>
+              popBubble(bubble.id)
+            }
+          />
+
         ))}
-      </SimulationsGrid>
 
-      <SimulationModal isOpen={isModalOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>{selectedSimulation.title}</ModalTitle>
-            <CloseButton onClick={() => setIsModalOpen(false)}>
-              <X size={18} />
-            </CloseButton>
-          </ModalHeader>
-
-          <VideoArea>
-            {!isRecording ? (
-              <VideoOverlay>
-                <StartButton onClick={() => setIsRecording(true)}>
-                  <Play size={28} />
-                </StartButton>
-              </VideoOverlay>
-            ) : (
-              <>
-                <div style={{ color: 'white', textAlign: 'center' }}>
-                  <User size={64} style={{ marginBottom: theme.spacing[4] }} />
-                  <p>模拟进行中...</p>
-                </div>
-                <div style={{ position: 'absolute', top: theme.spacing[4], right: theme.spacing[4], color: theme.colors.danger[400] }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: theme.spacing[2] }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: theme.colors.danger[500], animation: 'pulse 1s infinite' }} />
-                    录制中
-                  </span>
-                </div>
-              </>
-            )}
-          </VideoArea>
-
-          <ScenarioInfo>
-            <CardBody>
-              <ScenarioTitle>模拟场景</ScenarioTitle>
-              <ScenarioText>{selectedSimulation.scenario}</ScenarioText>
-            </CardBody>
-          </ScenarioInfo>
-
-          <ControlsBar>
-            <ControlButton onClick={() => setIsVideoOn(!isVideoOn)} active={isVideoOn}>
-              {isVideoOn ? <Video size={24} /> : <VideoOff size={24} />}
-            </ControlButton>
-            <ControlButton onClick={() => setIsRecording(!isRecording)} active={isRecording}>
-              {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
-            </ControlButton>
-            <ControlButton danger onClick={() => setIsRecording(false)}>
-              <X size={24} />
-            </ControlButton>
-          </ControlsBar>
-
-          {!isRecording && (
-            <FeedbackSection>
-              <FeedbackTitle>模拟反馈</FeedbackTitle>
-              <FeedbackCard>
-                <CardBody>
-                  <FeedbackItem>
-                    <FeedbackIcon>
-                      <CheckCircle size={20} color={theme.colors.success[600]} />
-                    </FeedbackIcon>
-                    <FeedbackContent>
-                      <FeedbackLabel>表达清晰</FeedbackLabel>
-                      <FeedbackText>你的回答逻辑清晰，表达流畅</FeedbackText>
-                    </FeedbackContent>
-                  </FeedbackItem>
-                  <FeedbackItem>
-                    <FeedbackIcon>
-                      <CheckCircle size={20} color={theme.colors.success[600]} />
-                    </FeedbackIcon>
-                    <FeedbackContent>
-                      <FeedbackLabel>眼神交流</FeedbackLabel>
-                      <FeedbackText>保持良好的眼神接触，显得自信</FeedbackText>
-                    </FeedbackContent>
-                  </FeedbackItem>
-                  <FeedbackItem>
-                    <FeedbackIcon>
-                      <CheckCircle size={20} color={theme.colors.success[600]} />
-                    </FeedbackIcon>
-                    <FeedbackContent>
-                      <FeedbackLabel>肢体语言</FeedbackLabel>
-                      <FeedbackText>姿态自然，手势恰当</FeedbackText>
-                    </FeedbackContent>
-                  </FeedbackItem>
-                </CardBody>
-              </FeedbackCard>
-            </FeedbackSection>
-          )}
-        </ModalContent>
-      </SimulationModal>
-    </SimulationContainer>
+    </Container>
   );
 };

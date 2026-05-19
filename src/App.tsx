@@ -15,6 +15,15 @@ import { SimulationPage } from './pages/SimulationPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AuthPage } from './pages/AuthPage';
 
+// 导入的 7 个全新绿洲页面
+import { FAQ } from './pages/FAQ';
+import { Contact } from './pages/Contact';
+import { Feedback } from './pages/Feedback';
+import { AboutUs } from './pages/AboutUs';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
+import { TeamIntro } from './pages/TeamIntro';
+
 interface User {
   username: string;
   email: string;
@@ -151,6 +160,24 @@ function App() {
             viewingUsername={viewingUsername}
           />
         );
+
+      // --- 底部栏"支持"板块路由 ---
+      case 'faq':
+        return <FAQ />;
+      case 'contact':
+        return <Contact />;
+      case 'feedback':
+        return <Feedback />;
+
+      // --- 底部栏"关于"板块路由 ---
+      case 'about':
+        return <AboutUs />;
+      case 'privacy':
+        return <PrivacyPolicy />;
+      case 'terms':
+        return <TermsOfService />;
+      case 'team':
+        return <TeamIntro />;
 
       default:
         return (

@@ -27,6 +27,7 @@ import { theme } from '../styles/theme';
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Tag } from '../components/ui/Tag';
+import UserProfileModal from '../components/UserProfileModal';
 
 interface PostAuthor {
   _id: string;
@@ -1165,6 +1166,9 @@ export const ForumPage = ({
   const [copied, setCopied] = useState(false);
   const [following, setFollowing] = useState<string[]>([]);
   const [friends, setFriends] = useState<string[]>([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [viewingUserId, setViewingUserId] = useState('');
+  const [viewingUsername, setViewingUsername] = useState('');
 
   useEffect(() => {
     fetchPosts();
@@ -1228,7 +1232,15 @@ export const ForumPage = ({
   };
 
   const handleViewProfile = (userId: string, username: string) => {
-    onNavigate(`profile/${userId}/${username}`);
+    setViewingUserId(String(userId));
+    setViewingUsername(username);
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
+    setViewingUserId('');
+    setViewingUsername('');
   };
 
   const totalComments = useMemo(() => {
@@ -2345,6 +2357,14 @@ export const ForumPage = ({
         </ModalContent>
 
       </ModalOverlay>
+
+      {/* 用户主页弹窗 */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={closeProfileModal}
+        userId={viewingUserId}
+        username={viewingUsername}
+      />
 
       {/* 分享 Modal */}
 

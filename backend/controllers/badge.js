@@ -120,8 +120,8 @@ const defaultBadges = [
   },
   {
     code: 'emotion_14',
-    name: '感恩之心',
-    icon: '💖',
+    name: '心灵记录者',
+    icon: '✍️',
     description: '连续14天记录情绪',
     category: 'emotion',
     requirement: { type: 'emotion_streak', count: 14 }
@@ -164,15 +164,12 @@ exports.initializeBadges = async () => {
   }
 };
 
-exports.getUserBadges = async (req, res) => {
+exports.getBadgeList = async (userId) => {
   try {
-    const userId = req.user.id;
-    
     const userBadges = await UserBadge.find({ userId }).populate('badgeId');
     const earnedBadgeIds = userBadges.map(ub => ub.badgeId._id.toString());
-    
     const allBadges = await Badge.find({ isActive: true });
-    
+
     const badgesWithStatus = allBadges.map(badge => {
       const earned = earnedBadgeIds.includes(badge._id.toString());
       const userBadge = userBadges.find(ub => ub.badgeId._id.toString() === badge._id.toString());
@@ -183,6 +180,152 @@ exports.getUserBadges = async (req, res) => {
         earnedAt: userBadge ? userBadge.earnedAt : null
       };
     });
+
+    return badgesWithStatus;
+  } catch (error) {
+    console.error('获取徽章列表失败:', error);
+    return [];
+  }
+};
+
+exports.getUserBadges = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const userBadges = await UserBadge.find({ userId }).populate('badgeId');
+    const earnedBadgeIds = userBadges.map(ub => ub.badgeId._id.toString());
+    
+    const allBadges = await Badge.find({ isActive: true });
+    const user = await User.findById(userId);
+
+    const taskCodeMap = {
+      'meal': ['早餐', '午餐', '晚餐'],
+      'exercise': ['运动30分钟'],
+      'sleep': ['按时睡觉'],
+      'meditation': ['冥想10分钟'],
+      'reading': ['阅读'],
+      'water': ['喝水'],
+      'social': ['与朋友聊天', '帮助他人', '表达感谢'],
+      'breathing': ['深呼吸']
+    };
+
+    const badgesWithStatus = await Promise.all(allBadges.map(async (badge) => {
+      const earned = earnedBadgeIds.includes(badge._id.toString());
+      const userBadge = userBadges.find(ub => ub.badgeId._id.toString() === badge._id.toString());
+      
+      let progress = 0;
+      let current = 0;
+      let target = badge.requirement.count;
+
+      if (badge.requirement.type === 'energy_level') {
+        current = user?.energyLevel || 0;
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+      else if (badge.requirement.type === 'total_energy') {
+        const totalEnergy = await UserTask.aggregate([
+          { $match: { userId } },
+          { $group: { _id: null, total: { $sum: '$energyGained' } } }
+        ]);
+        current = totalEnergy[0]?.total || 0;
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+      else if (badge.requirement.type === 'emotion_count') {
+        current = await EmotionRecord.countDocuments({ userId });
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+      else if (badge.requirement.type === 'task_count') {
+        const taskNames = taskCodeMap[badge.requirement.taskCode] || [];
+        if (taskNames.length > 0) {
+          const tasks = await Task.find({ name: { $in: taskNames } });
+          const taskIds = tasks.map(t => t._id);
+          current = await UserTask.countDocuments({
+            userId,
+            taskId: { $in: taskIds }
+          });
+        }
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+      else if (badge.requirement.type === 'happy_streak') {
+        const emotions = await EmotionRecord.find({ userId, emotion: 'happy' })
+          .sort({ createdAt: -1 })
+          .limit(target);
+        current = emotions.length;
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+      else if (badge.requirement.type === 'emotion_streak') {
+        const emotions = await EmotionRecord.find({ userId })
+          .sort({ createdAt: -1 });
+        let streakCount = 0;
+        let prevDate = null;
+        for (const emotion of emotions) {
+          const currentDate = new Date(emotion.createdAt);
+          currentDate.setHours(0, 0, 0, 0);
+          if (prevDate) {
+            const expectedPrevDate = new Date(currentDate);
+            expectedPrevDate.setDate(expectedPrevDate.getDate() - 1);
+            if (prevDate.getTime() === expectedPrevDate.getTime()) {
+              streakCount++;
+            } else {
+              break;
+            }
+          } else {
+            streakCount = 1;
+          }
+          prevDate = currentDate;
+        }
+        current = streakCount;
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+      else if (badge.requirement.type === 'task_streak') {
+        const minTasksPerDay = badge.requirement.minTasks || 3;
+        const tasksByDay = {};
+        const userTasks = await UserTask.find({ userId });
+        for (const task of userTasks) {
+          const date = new Date(task.completedAt);
+          date.setHours(0, 0, 0, 0);
+          const dateKey = date.getTime();
+          if (!tasksByDay[dateKey]) {
+            tasksByDay[dateKey] = [];
+          }
+          tasksByDay[dateKey].push(task);
+        }
+        const validDays = Object.keys(tasksByDay)
+          .filter(key => tasksByDay[key].length >= minTasksPerDay)
+          .map(key => parseInt(key))
+          .sort((a, b) => b - a);
+        let streakCount = 0;
+        for (let i = 0; i < validDays.length; i++) {
+          if (i === 0) {
+            streakCount = 1;
+          } else {
+            const currentDay = new Date(validDays[i]);
+            const prevDay = new Date(validDays[i - 1]);
+            prevDay.setDate(prevDay.getDate() - 1);
+            if (currentDay.getTime() === prevDay.getTime()) {
+              streakCount++;
+            } else {
+              break;
+            }
+          }
+        }
+        current = streakCount;
+        progress = Math.min(100, Math.round((current / target) * 100));
+      }
+
+      if (earned) {
+         progress = 100;
+         current = target;
+       }
+       
+       return {
+         ...badge.toObject(),
+         earned,
+         earnedAt: userBadge ? userBadge.earnedAt : null,
+         progress,
+         current,
+         target
+       };
+    }));
 
     const groupedBadges = {
       health: badgesWithStatus.filter(b => b.category === 'health'),
@@ -198,6 +341,7 @@ exports.getUserBadges = async (req, res) => {
       totalCount: allBadges.length
     });
   } catch (error) {
+    console.error('获取徽章失败:', error);
     res.status(500).json({ success: false, message: '获取徽章失败' });
   }
 };

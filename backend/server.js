@@ -33,6 +33,7 @@ async function startServer() {
     const emotionRoutes = require('./routes/emotion');
     const taskRoutes = require('./routes/task');
     const badgeRoutes = require('./routes/badge');
+    const todoRoutes = require('./routes/todo');
 
     const { initializeTasks } = require('./controllers/task');
     const { initializeBadges } = require('./controllers/badge');
@@ -45,6 +46,7 @@ async function startServer() {
     app.use('/api/emotions', emotionRoutes);
     app.use('/api/tasks', taskRoutes);
     app.use('/api/badges', badgeRoutes);
+    app.use('/api/todos', todoRoutes);
 
     await initializeTasks();
     await initializeBadges();

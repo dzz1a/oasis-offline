@@ -684,65 +684,115 @@ const BadgeSection = styled.div`
 `;
 
 const BadgeCategory = styled.div`
-  margin-bottom: ${theme.spacing[3]};
+  margin-bottom: ${theme.spacing[4]};
 `;
 
 const BadgeCategoryTitle = styled.h4`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[600]};
-  margin-bottom: ${theme.spacing[2]};
-  font-weight: ${theme.fonts.weights.medium};
+  font-size: ${theme.fonts.sizes.base};
+  color: ${theme.colors.neutral[700]};
+  margin-bottom: ${theme.spacing[3]};
+  font-weight: ${theme.fonts.weights.bold};
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[2]};
 `;
 
 const BadgeGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: ${theme.spacing[3]};
 `;
 
 const BadgeItem = styled.div<{ earned: boolean }>`
   text-align: center;
-  opacity: ${({ earned }) => earned ? 1 : 0.4};
-  transition: opacity ${theme.transitions.fast};
+  padding: ${theme.spacing[3]};
+  border-radius: ${theme.borderRadius.lg};
+  background: ${({ earned }) => earned 
+    ? `linear-gradient(135deg, ${theme.colors.warm[50]}, ${theme.colors.primary[50]})`
+    : theme.colors.neutral[50]};
+  border: 2px solid ${({ earned }) => earned 
+    ? theme.colors.warm[200] 
+    : theme.colors.neutral[200]};
+  transition: all ${theme.transitions.fast};
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: ${({ earned }) => earned 
+      ? `0 8px 20px ${theme.colors.warm[200]}`
+      : theme.shadows.md};
+  }
 `;
 
 const BadgeIcon = styled.div<{ earned: boolean }>`
-  width: 64px;
-  height: 64px;
-  border-radius: ${theme.borderRadius.xl};
-  background: ${({ earned }) => earned ? theme.colors.warm[100] : theme.colors.neutral[100]};
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: ${({ earned }) => earned 
+    ? `linear-gradient(135deg, ${theme.colors.warm[100]}, ${theme.colors.primary[100]})`
+    : theme.colors.neutral[100]};
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto ${theme.spacing[2]};
-  font-size: 32px;
-  box-shadow: ${({ earned }) => earned ? `0 4px 12px ${theme.colors.warm[200]}` : 'none'};
+  font-size: 28px;
+  box-shadow: ${({ earned }) => earned 
+    ? `0 4px 12px ${theme.colors.warm[200]}` 
+    : 'none'};
+  transition: all ${theme.transitions.fast};
 `;
 
 const BadgeName = styled.div`
-  font-size: ${theme.fonts.sizes.xs};
-  color: ${theme.colors.neutral[700]};
-  font-weight: ${theme.fonts.weights.medium};
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[800]};
+  font-weight: ${theme.fonts.weights.bold};
+  margin-bottom: ${theme.spacing[1]};
 `;
 
 const BadgeDescription = styled.div`
-  font-size: 9px;
+  font-size: ${theme.fonts.sizes.xs};
   color: ${theme.colors.neutral[500]};
-  margin-top: 2px;
+  margin-bottom: ${theme.spacing[2]};
+  line-height: 1.4;
+`;
+
+const BadgeProgressBar = styled.div`
+  width: 100%;
+  height: 6px;
+  background: ${theme.colors.neutral[200]};
+  border-radius: ${theme.borderRadius.full};
+  overflow: hidden;
+`;
+
+const BadgeProgressFill = styled.div<{ progress: number; earned: boolean }>`
+  height: 100%;
+  width: ${({ progress }) => progress}%;
+  background: ${({ earned }) => earned 
+    ? `linear-gradient(90deg, ${theme.colors.warm[400]}, ${theme.colors.primary[400]})`
+    : theme.colors.primary[300]};
+  border-radius: ${theme.borderRadius.full};
+  transition: width 0.3s ease;
+`;
+
+const BadgeProgressText = styled.div`
+  font-size: 10px;
+  color: ${theme.colors.neutral[500]};
+  margin-top: ${theme.spacing[1]};
 `;
 
 const BadgeStats = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${theme.spacing[3]};
-  padding: ${theme.spacing[2]} ${theme.spacing[3]};
-  background: ${theme.colors.warm[50]};
-  border-radius: ${theme.borderRadius.md};
+  margin-bottom: ${theme.spacing[4]};
+  padding: ${theme.spacing[3]} ${theme.spacing[4]};
+  background: linear-gradient(135deg, ${theme.colors.warm[50]}, ${theme.colors.primary[50]});
+  border-radius: ${theme.borderRadius.lg};
+  border: 1px solid ${theme.colors.warm[100]};
 `;
 
 const BadgeCount = styled.div`
-  font-size: ${theme.fonts.sizes.base};
+  font-size: ${theme.fonts.sizes.lg};
   font-weight: ${theme.fonts.weights.bold};
   color: ${theme.colors.warm[600]};
 `;
@@ -857,6 +907,218 @@ const ContactButton = styled(Button)`
   }
 `;
 
+const PrivacySection = styled.div`
+  margin-bottom: ${theme.spacing[6]};
+`;
+
+const PrivacySectionTitle = styled.h3`
+  font-size: ${theme.fonts.sizes.base};
+  font-weight: ${theme.fonts.weights.medium};
+  color: ${theme.colors.neutral[800]};
+  margin-bottom: ${theme.spacing[3]};
+`;
+
+const PrivacyItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: ${theme.spacing[3]} 0;
+  border-bottom: 1px solid ${theme.colors.neutral[100]};
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const PrivacyItemContent = styled.div`
+  flex: 1;
+`;
+
+const PrivacyItemTitle = styled.span`
+  font-weight: ${theme.fonts.weights.medium};
+  color: ${theme.colors.neutral[800]};
+  display: block;
+`;
+
+const PrivacyItemDesc = styled.span`
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[500]};
+  margin-top: ${theme.spacing[1]};
+`;
+
+const PrivacyToggle = styled.input`
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  appearance: none;
+  background: ${theme.colors.neutral[300]};
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:checked {
+    background: ${theme.colors.primary[500]};
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &:checked::before {
+    transform: translateX(20px);
+  }
+`;
+
+const PrivacyBadgeGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: ${theme.spacing[3]};
+  margin-bottom: ${theme.spacing[4]};
+`;
+
+const PrivacyBadgeItem = styled.button<{ selected: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${theme.spacing[2]};
+  padding: ${theme.spacing[3]};
+  border-radius: ${theme.borderRadius.md};
+  border: 2px solid ${props => props.selected ? theme.colors.primary[500] : theme.colors.neutral[200]};
+  background: ${props => props.selected ? theme.colors.primary[50] : theme.colors.neutral[50]};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${theme.colors.primary[400]};
+    background: ${theme.colors.primary[50]};
+  }
+`;
+
+const PrivacyBadgeIcon = styled.span`
+  font-size: 28px;
+`;
+
+const PrivacyBadgeName = styled.span`
+  font-size: ${theme.fonts.sizes.xs};
+  color: ${theme.colors.neutral[700]};
+  text-align: center;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: ${theme.spacing[8]};
+  grid-column: 1 / -1;
+`;
+
+const SelectedCount = styled.div`
+  text-align: center;
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${theme.colors.neutral[500]};
+`;
+
+const SidebarContent = styled.div`
+  position: sticky;
+  top: ${theme.spacing[6]};
+`;
+
+const TodoInputWrapper = styled.div`
+  display: flex;
+  gap: ${theme.spacing[2]};
+  margin-bottom: ${theme.spacing[4]};
+`;
+
+const TodoInput = styled.input`
+  flex: 1;
+  padding: ${theme.spacing[3]} ${theme.spacing[4]};
+  border-radius: ${theme.borderRadius.md};
+  border: 1px solid ${theme.colors.neutral[200]};
+  font-size: ${theme.fonts.sizes.sm};
+  transition: all ${theme.transitions.fast};
+
+  &:focus {
+    outline: none;
+    border-color: ${theme.colors.primary[500]};
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+  }
+`;
+
+const TodoList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing[2]};
+`;
+
+const TodoItem = styled.div<{ completed: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: ${theme.spacing[3]};
+  padding: ${theme.spacing[3]};
+  background: ${theme.colors.neutral[50]};
+  border-radius: ${theme.borderRadius.md};
+  transition: all ${theme.transitions.fast};
+
+  &:hover {
+    background: ${theme.colors.neutral[100]};
+  }
+`;
+
+const TodoCheckbox = styled.button<{ checked: boolean }>`
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid ${({ checked }) => checked ? theme.colors.primary[500] : theme.colors.neutral[300]};
+  background: ${({ checked }) => checked ? theme.colors.primary[500] : 'transparent'};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all ${theme.transitions.fast};
+
+  &:hover {
+    border-color: ${theme.colors.primary[400]};
+  }
+`;
+
+const TodoText = styled.span<{ completed: boolean }>`
+  flex: 1;
+  font-size: ${theme.fonts.sizes.sm};
+  color: ${({ completed }) => completed ? theme.colors.neutral[400] : theme.colors.neutral[700]};
+  text-decoration: ${({ completed }) => completed ? 'line-through' : 'none'};
+`;
+
+const TodoDeleteBtn = styled.button`
+  padding: ${theme.spacing[1]};
+  border: none;
+  background: transparent;
+  color: ${theme.colors.neutral[400]};
+  cursor: pointer;
+  border-radius: ${theme.borderRadius.sm};
+  transition: all ${theme.transitions.fast};
+
+  &:hover {
+    color: ${theme.colors.danger[500]};
+    background: ${theme.colors.danger[50]};
+  }
+`;
+
+const TodoEmptyState = styled.div`
+  text-align: center;
+  padding: ${theme.spacing[8]} ${theme.spacing[4]};
+  color: ${theme.colors.neutral[500]};
+`;
+
 interface FavoritePost {
   _id: string;
   author: {
@@ -903,6 +1165,147 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [badges, setBadges] = useState<any>({ health: [], energy: [], emotion: [], streak: [] });
   const [badgeStats, setBadgeStats] = useState({ earnedCount: 0, totalCount: 0 });
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [privacySettings, setPrivacySettings] = useState({
+    showEnergy: true,
+    showEmotionStatus: true,
+    showEmotionContent: false,
+    displayBadges: [] as string[]
+  });
+  const [availableBadges, setAvailableBadges] = useState<any[]>([]);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordMessage, setPasswordMessage] = useState('');
+  
+  const [todos, setTodos] = useState<any[]>([]);
+  const [newTodoText, setNewTodoText] = useState('');
+  
+  const fetchTodos = async () => {
+    console.log('fetchTodos called');
+    try {
+      const response = await fetch('http://localhost:5000/api/todos', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log('fetchTodos response status:', response.status);
+      const data = await response.json();
+      console.log('fetchTodos response data:', data);
+      if (data.success) {
+        setTodos(data.todos);
+      }
+    } catch (error) {
+      console.error('获取待办事项失败:', error);
+    }
+  };
+  
+  const handlePasswordChange = async () => {
+    setPasswordMessage('');
+    
+    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordMessage('请填写所有字段');
+      return;
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordMessage('两次输入的新密码不一致');
+      return;
+    }
+    
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordMessage('新密码长度不能少于6位');
+      return;
+    }
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/users/password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(passwordForm)
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setPasswordMessage('密码修改成功！');
+        setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setPasswordMessage(data.message);
+      }
+    } catch (error) {
+      console.error('修改密码失败:', error);
+      setPasswordMessage('修改密码失败，请重试');
+    }
+  };
+  
+  const addTodo = async () => {
+    console.log('addTodo called with:', newTodoText);
+    if (!newTodoText.trim()) {
+      console.log('Empty todo text, returning');
+      return;
+    }
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/todos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ title: newTodoText.trim() })
+      });
+      console.log('Response status:', response.status);
+      const data = await response.json();
+      console.log('Response data:', data);
+      if (data.success) {
+        setTodos(prev => [data.todo, ...prev]);
+        setNewTodoText('');
+      }
+    } catch (error) {
+      console.error('添加待办事项失败:', error);
+    }
+  };
+  
+  const toggleTodo = async (todoId: string, completed: boolean) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/todos/${todoId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ completed: !completed })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTodos(prev => prev.map(todo => 
+          todo._id === todoId ? { ...todo, completed: !completed } : todo
+        ));
+      }
+    } catch (error) {
+      console.error('更新待办事项失败:', error);
+    }
+  };
+  
+  const deleteTodo = async (todoId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/todos/${todoId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setTodos(prev => prev.filter(todo => todo._id !== todoId));
+      }
+    } catch (error) {
+      console.error('删除待办事项失败:', error);
+    }
+  };
   
   const calendarDays = () => {
     const year = currentMonth.getFullYear();
@@ -960,6 +1363,96 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     setEditingEmotionId(null);
     setNewEmotion('');
     setNewNote('');
+  };
+  
+  const openPrivacyModal = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/users/privacy', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success && data.user) {
+        setPrivacySettings({
+          showEnergy: data.user.privacy?.showEnergy ?? true,
+          showEmotionStatus: data.user.privacy?.showEmotionStatus ?? true,
+          showEmotionContent: data.user.privacy?.showEmotionContent ?? false,
+          displayBadges: data.user.privacy?.displayBadges ?? []
+        });
+        setSelectedBadges(
+          (data.user.privacy?.displayBadges ?? []).map((id: string) => String(id))
+        );
+      }
+    } catch (error) {
+      console.error('获取隐私设置失败:', error);
+    }
+    setIsPrivacyModalOpen(true);
+  };
+  
+  const closePrivacyModal = () => {
+    setIsPrivacyModalOpen(false);
+  };
+  
+  const handlePrivacyChange = (key: string, value: any) => {
+    setPrivacySettings(prev => ({ ...prev, [key]: value }));
+  };
+  
+  const toggleBadgeSelection = (badgeId: string) => {
+    setSelectedBadges(prev => {
+      if (prev.includes(badgeId)) {
+        return prev.filter(id => id !== badgeId);
+      } else if (prev.length < 3) {
+        return [...prev, badgeId];
+      }
+      return prev;
+    });
+  };
+  
+  const savePrivacySettings = async () => {
+    try {
+      console.log('开始保存隐私设置...');
+      console.log('privacySettings:', privacySettings);
+      console.log('selectedBadges:', selectedBadges);
+      
+      const response = await fetch('http://localhost:5000/api/users/privacy', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          ...privacySettings,
+          displayBadges: selectedBadges
+        })
+      });
+      
+      console.log('响应状态:', response.status);
+      const data = await response.json();
+      console.log('响应数据:', data);
+      
+      if (data.success) {
+        const savedPrivacy = {
+          showEnergy: data.privacy?.showEnergy ?? privacySettings.showEnergy,
+          showEmotionStatus: data.privacy?.showEmotionStatus ?? privacySettings.showEmotionStatus,
+          showEmotionContent: data.privacy?.showEmotionContent ?? privacySettings.showEmotionContent,
+          displayBadges: (data.privacy?.displayBadges ?? selectedBadges).map((id: string) =>
+            String(id)
+          ),
+        };
+        setPrivacySettings(savedPrivacy);
+        setUser((prev: any) => ({ ...prev, privacy: savedPrivacy }));
+        alert('隐私设置保存成功！');
+        closePrivacyModal();
+      } else {
+        alert('保存失败: ' + data.message);
+      }
+    } catch (error) {
+      console.error('保存隐私设置失败:', error);
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      alert('保存失败，请重试: ' + errorMessage);
+    }
   };
   
   const fetchEmotions = async () => {
@@ -1094,13 +1587,31 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
 
   const fetchBadges = async () => {
     try {
+      console.log('开始获取徽章数据...');
       const response = await fetch('http://localhost:5000/api/badges/user', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      console.log('徽章API响应状态:', response.status);
       const data = await response.json();
+      console.log('徽章API响应数据:', data);
       if (data.success) {
         setBadges(data.badges);
         setBadgeStats({ earnedCount: data.earnedCount, totalCount: data.totalCount });
+        
+        // 同时计算已获得的徽章
+        const earnedBadges: any[] = [];
+        (Object.values(data.badges) as any[]).forEach((category: any[]) => {
+          category.forEach((badge: any) => {
+            if (badge.earned) {
+              earnedBadges.push(badge);
+            }
+          });
+        });
+        setAvailableBadges(earnedBadges);
+        console.log('已获得徽章数量:', earnedBadges.length);
+        console.log('已获得徽章列表:', earnedBadges);
+      } else {
+        console.error('徽章API返回失败:', data.message);
       }
     } catch (err) {
       console.error('获取徽章失败:', err);
@@ -1120,6 +1631,9 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     .then(data => {
       if (data.user) {
         setUser(data.user);
+        if (data.user.stats) {
+          setStats(data.user.stats);
+        }
         if (!isOwn && data.user.followers) {
           setIsFollowing(data.user.followers.some((f: string) => f.toString() === currentUser.id));
         }
@@ -1134,6 +1648,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
       fetchEmotions();
       fetchTasks();
       fetchBadges();
+      fetchTodos();
     }
   }, [currentUser, viewingUserId, viewingUsername]);
 
@@ -1291,7 +1806,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
                 <Edit2 size={18} />
                 编辑资料
               </Button>
-              <Button>
+              <Button onClick={openPrivacyModal}>
                 <Settings size={18} />
                 设置
               </Button>
@@ -1343,8 +1858,88 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
       </StatsRow>
 
       <ProfileContent>
-        <>
           <MainContent>
+            {!isOwnProfile && (user as any).privacy && (
+              <>
+                {(user as any).privacy.showEnergy && user.energyLevel !== undefined && (
+                  <SectionCard>
+                    <SectionHeader>
+                      <SectionTitle>⚡ 当前能量</SectionTitle>
+                    </SectionHeader>
+                    <CardBody>
+                      <EnergyBar>
+                        <EnergyFill level={Math.min(100, user.energyLevel || 0)} />
+                      </EnergyBar>
+                      <EnergyLevel>当前能量: {user.energyLevel || 0}</EnergyLevel>
+                    </CardBody>
+                  </SectionCard>
+                )}
+
+                {(user as any).privacy.showEmotionStatus && (
+                  <SectionCard>
+                    <SectionHeader>
+                      <SectionTitle>😊 最近心情</SectionTitle>
+                    </SectionHeader>
+                    <CardBody>
+                      {(user as any).recentEmotion ? (
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing[3], marginBottom: theme.spacing[3] }}>
+                            <span style={{ fontSize: '2rem' }}>
+                              {emotionLabels[(user as any).recentEmotion.emotion]?.emoji || '📝'}
+                            </span>
+                            <div>
+                              <div style={{ fontWeight: theme.fonts.weights.bold, color: theme.colors.neutral[800] }}>
+                                {emotionLabels[(user as any).recentEmotion.emotion]?.label || (user as any).recentEmotion.emotion}
+                                {' · '}强度 {(user as any).recentEmotion.intensity}/10
+                              </div>
+                              <div style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[500] }}>
+                                {new Date((user as any).recentEmotion.createdAt).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                          {(user as any).recentEmotion.note ? (
+                            <p style={{ color: theme.colors.neutral[600], fontSize: theme.fonts.sizes.sm, margin: 0 }}>
+                              {(user as any).recentEmotion.note}
+                            </p>
+                          ) : (user as any).privacy.showEmotionContent ? (
+                            <p style={{ color: theme.colors.neutral[400], fontSize: theme.fonts.sizes.sm }}>暂无心情备注</p>
+                          ) : (
+                            <p style={{ color: theme.colors.neutral[400], fontSize: theme.fonts.sizes.sm }}>对方未公开心情备注</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p style={{ color: theme.colors.neutral[400], textAlign: 'center' }}>暂无情绪记录</p>
+                      )}
+                    </CardBody>
+                  </SectionCard>
+                )}
+
+                <SectionCard>
+                  <SectionHeader>
+                    <SectionTitle>🏆 展示徽章</SectionTitle>
+                  </SectionHeader>
+                  <CardBody>
+                    {((user as any).displayBadges || []).length > 0 ? (
+                      <BadgeGrid>
+                        {((user as any).displayBadges || []).map((badge: any) => (
+                          <BadgeItem key={badge._id} earned>
+                            <BadgeIcon earned>{badge.icon}</BadgeIcon>
+                            <BadgeName>{badge.name}</BadgeName>
+                          </BadgeItem>
+                        ))}
+                      </BadgeGrid>
+                    ) : (
+                      <p style={{ color: theme.colors.neutral[400], textAlign: 'center' }}>
+                        {(user as any).privacy.displayBadges?.length > 0
+                          ? '所选展示徽章暂不可用'
+                          : '暂未设置展示徽章'}
+                      </p>
+                    )}
+                  </CardBody>
+                </SectionCard>
+              </>
+            )}
+
             {isOwnProfile && (
             <>
               <SectionCard>
@@ -1353,9 +1948,9 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
                 </SectionHeader>
                 <CardBody>
                   <EnergyBar>
-                    <EnergyFill level={Math.min(100, taskStats.totalEnergy || 0)} />
+                    <EnergyFill level={Math.min(100, user.energyLevel || 0)} />
                   </EnergyBar>
-                  <EnergyLevel>今日能量: {taskStats.totalEnergy || 0}</EnergyLevel>
+                  <EnergyLevel>当前能量: {user.energyLevel || 0}</EnergyLevel>
                   
                   <TaskStats>
                     <TaskStatItem>
@@ -1569,10 +2164,14 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
                       <BadgeCategoryTitle>🥗 身心健康</BadgeCategoryTitle>
                       <BadgeGrid>
                         {badges.health.map((badge: any) => (
-                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                          <BadgeItem key={badge._id} earned={badge.earned}>
                             <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
                             <BadgeName>{badge.name}</BadgeName>
                             <BadgeDescription>{badge.description}</BadgeDescription>
+                            <BadgeProgressBar>
+                              <BadgeProgressFill progress={badge.progress || 0} earned={badge.earned} />
+                            </BadgeProgressBar>
+                            <BadgeProgressText>{badge.current || 0} / {badge.target || 0}</BadgeProgressText>
                           </BadgeItem>
                         ))}
                       </BadgeGrid>
@@ -1582,10 +2181,14 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
                       <BadgeCategoryTitle>⚡ 能量积累</BadgeCategoryTitle>
                       <BadgeGrid>
                         {badges.energy.map((badge: any) => (
-                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                          <BadgeItem key={badge._id} earned={badge.earned}>
                             <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
                             <BadgeName>{badge.name}</BadgeName>
                             <BadgeDescription>{badge.description}</BadgeDescription>
+                            <BadgeProgressBar>
+                              <BadgeProgressFill progress={badge.progress || 0} earned={badge.earned} />
+                            </BadgeProgressBar>
+                            <BadgeProgressText>{badge.current || 0} / {badge.target || 0}</BadgeProgressText>
                           </BadgeItem>
                         ))}
                       </BadgeGrid>
@@ -1595,10 +2198,14 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
                       <BadgeCategoryTitle>😊 情绪记录</BadgeCategoryTitle>
                       <BadgeGrid>
                         {badges.emotion.map((badge: any) => (
-                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                          <BadgeItem key={badge._id} earned={badge.earned}>
                             <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
                             <BadgeName>{badge.name}</BadgeName>
                             <BadgeDescription>{badge.description}</BadgeDescription>
+                            <BadgeProgressBar>
+                              <BadgeProgressFill progress={badge.progress || 0} earned={badge.earned} />
+                            </BadgeProgressBar>
+                            <BadgeProgressText>{badge.current || 0} / {badge.target || 0}</BadgeProgressText>
                           </BadgeItem>
                         ))}
                       </BadgeGrid>
@@ -1608,10 +2215,14 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
                       <BadgeCategoryTitle>📅 连续打卡</BadgeCategoryTitle>
                       <BadgeGrid>
                         {badges.streak.map((badge: any) => (
-                          <BadgeItem key={badge._id} earned={badge.earned} title={badge.description}>
+                          <BadgeItem key={badge._id} earned={badge.earned}>
                             <BadgeIcon earned={badge.earned}>{badge.icon}</BadgeIcon>
                             <BadgeName>{badge.name}</BadgeName>
                             <BadgeDescription>{badge.description}</BadgeDescription>
+                            <BadgeProgressBar>
+                              <BadgeProgressFill progress={badge.progress || 0} earned={badge.earned} />
+                            </BadgeProgressBar>
+                            <BadgeProgressText>{badge.current || 0} / {badge.target || 0}</BadgeProgressText>
                           </BadgeItem>
                         ))}
                       </BadgeGrid>
@@ -1666,54 +2277,58 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
             </CardBody>
           </SectionCard>
         </MainContent>
-          </>
-          {isOwnProfile && (
-          <MenuSection>
-            <Card>
-              <CardBody>
-                {[
-                  { icon: Bell, title: '通知设置', desc: '管理通知偏好' },
-                  { icon: Shield, title: '隐私设置', desc: '控制数据和隐私' },
-                  { icon: Activity, title: '数据统计', desc: '查看使用统计' },
-                  { icon: Calendar, title: '日程管理', desc: '管理你的日程' },
-                ].map((item, index) => (
-                  <MenuItem key={index}>
-                    <MenuIcon>
-                      <item.icon size={20} />
-                    </MenuIcon>
-                    <MenuText>
-                      <MenuTitle>{item.title}</MenuTitle>
-                      <MenuDescription>{item.desc}</MenuDescription>
-                    </MenuText>
-                    <ChevronRight size={18} color={theme.colors.neutral[400]} />
-                  </MenuItem>
-                ))}
-              </CardBody>
-            </Card>
 
-            <ContactCard>
-            <CardBody>
-              <ContactHeader>
-                <ContactIcon>
-                  <Heart size={20} />
-                </ContactIcon>
-                <ContactTitle>紧急联系人</ContactTitle>
-              </ContactHeader>
-              <ContactItem>
-                <ContactLabel>
-                  <ContactName>张医生</ContactName>
-                  <ContactRelation>心理医生</ContactRelation>
-                </ContactLabel>
-                <ContactButton size="sm">
-                  <Phone size={16} />
-                  联系
-                </ContactButton>
-              </ContactItem>
-            </CardBody>
-          </ContactCard>
-            </MenuSection>
-          )}
-        </ProfileContent>
+            {isOwnProfile && (
+            <SidebarContent>
+              <SectionCard>
+                <SectionHeader>
+                  <SectionTitle>📝 待办事项</SectionTitle>
+                </SectionHeader>
+                <CardBody>
+                  <TodoInputWrapper>
+                    <TodoInput
+                      type="text"
+                      value={newTodoText}
+                      onChange={(e) => setNewTodoText(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+                      placeholder="添加新的待办事项..."
+                    />
+                    <Button onClick={addTodo}>
+                      <Plus size={18} />
+                    </Button>
+                  </TodoInputWrapper>
+                  
+                  <TodoList>
+                    {todos.length > 0 ? (
+                      todos.map((todo) => (
+                        <TodoItem key={todo._id} completed={todo.completed}>
+                          <TodoCheckbox 
+                            checked={todo.completed}
+                            onClick={() => toggleTodo(todo._id, todo.completed)}
+                          >
+                            {todo.completed && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>}
+                          </TodoCheckbox>
+                          <TodoText completed={todo.completed}>{todo.title}</TodoText>
+                          <TodoDeleteBtn onClick={() => deleteTodo(todo._id)}>
+                            <Trash2 size={16} />
+                          </TodoDeleteBtn>
+                        </TodoItem>
+                      ))
+                    ) : (
+                      <TodoEmptyState>
+                        <Bookmark size={48} style={{ marginBottom: theme.spacing[3], opacity: 0.5 }} />
+                        <p>还没有待办事项</p>
+                        <p style={{ fontSize: theme.fonts.sizes.sm }}>添加一个新的任务开始吧！</p>
+                      </TodoEmptyState>
+                    )}
+                  </TodoList>
+                </CardBody>
+              </SectionCard>
+            </SidebarContent>
+            )}
+      </ProfileContent>
 
       <ModalOverlay isOpen={isEditModalOpen}>
         <ModalContent>
@@ -1850,6 +2465,148 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
             <Button onClick={handleAddEmotion} disabled={!newEmotion}>
               <Save size={18} />
               保存
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </ModalOverlay>
+
+      <ModalOverlay isOpen={isPrivacyModalOpen}>
+        <ModalContent style={{ maxWidth: '500px' }}>
+          <ModalHeader>
+            <ModalTitle>隐私设置</ModalTitle>
+            <CloseButton onClick={closePrivacyModal}>
+              <X size={18} />
+            </CloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <PrivacySection>
+              <PrivacySectionTitle>个人主页展示</PrivacySectionTitle>
+              
+              <PrivacyItem>
+                <PrivacyItemContent>
+                  <PrivacyItemTitle>展示能量值</PrivacyItemTitle>
+                  <PrivacyItemDesc>其他人可以看到你的当前能量值</PrivacyItemDesc>
+                </PrivacyItemContent>
+                <PrivacyToggle
+                  type="checkbox"
+                  checked={privacySettings.showEnergy}
+                  onChange={(e) => handlePrivacyChange('showEnergy', e.target.checked)}
+                />
+              </PrivacyItem>
+
+              <PrivacyItem>
+                <PrivacyItemContent>
+                  <PrivacyItemTitle>展示情绪状态</PrivacyItemTitle>
+                  <PrivacyItemDesc>其他人可以看到你最近的情绪图标</PrivacyItemDesc>
+                </PrivacyItemContent>
+                <PrivacyToggle
+                  type="checkbox"
+                  checked={privacySettings.showEmotionStatus}
+                  onChange={(e) => handlePrivacyChange('showEmotionStatus', e.target.checked)}
+                />
+              </PrivacyItem>
+
+              <PrivacyItem>
+                <PrivacyItemContent>
+                  <PrivacyItemTitle>展示情绪内容</PrivacyItemTitle>
+                  <PrivacyItemDesc>其他人可以看到你记录的心情备注</PrivacyItemDesc>
+                </PrivacyItemContent>
+                <PrivacyToggle
+                  type="checkbox"
+                  checked={privacySettings.showEmotionContent}
+                  onChange={(e) => handlePrivacyChange('showEmotionContent', e.target.checked)}
+                />
+              </PrivacyItem>
+            </PrivacySection>
+
+            <PrivacySection>
+              <PrivacySectionTitle>徽章展示</PrivacySectionTitle>
+              <PrivacyItemDesc style={{ marginBottom: theme.spacing[3] }}>
+                选择最多3个徽章展示在个人主页（已获得 {availableBadges.length} 个徽章）
+              </PrivacyItemDesc>
+              
+              <PrivacyBadgeGrid>
+                {availableBadges.length > 0 ? (
+                  availableBadges.map(badge => (
+                    <PrivacyBadgeItem 
+                      key={badge._id}
+                      selected={selectedBadges.includes(badge._id)}
+                      onClick={() => toggleBadgeSelection(badge._id)}
+                    >
+                      <PrivacyBadgeIcon>{badge.icon}</PrivacyBadgeIcon>
+                      <PrivacyBadgeName>{badge.name}</PrivacyBadgeName>
+                    </PrivacyBadgeItem>
+                  ))
+                ) : (
+                  <EmptyState>
+                    <Award size={48} color={theme.colors.neutral[300]} />
+                    <p style={{ marginTop: theme.spacing[2], color: theme.colors.neutral[500] }}>
+                      还没有获得任何徽章
+                    </p>
+                  </EmptyState>
+                )}
+              </PrivacyBadgeGrid>
+              
+              <SelectedCount>
+                已选择 {selectedBadges.length}/3 个徽章
+              </SelectedCount>
+            </PrivacySection>
+
+            <PrivacySection>
+              <PrivacySectionTitle>修改密码</PrivacySectionTitle>
+              
+              <FormGroup>
+                <FormLabel>原密码</FormLabel>
+                <FormInput
+                  type="password"
+                  value={passwordForm.oldPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, oldPassword: e.target.value }))}
+                  placeholder="请输入原密码"
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <FormLabel>新密码</FormLabel>
+                <FormInput
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                  placeholder="请输入新密码（至少6位）"
+                />
+              </FormGroup>
+              
+              <FormGroup>
+                <FormLabel>确认新密码</FormLabel>
+                <FormInput
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  placeholder="请再次输入新密码"
+                />
+              </FormGroup>
+              
+              {passwordMessage && (
+                <div style={{ 
+                  padding: theme.spacing[3], 
+                  borderRadius: theme.borderRadius.md,
+                  background: passwordMessage.includes('成功') ? theme.colors.success[50] : theme.colors.danger[50],
+                  color: passwordMessage.includes('成功') ? theme.colors.success[600] : theme.colors.danger[600],
+                  marginBottom: theme.spacing[3],
+                  textAlign: 'center'
+                }}>
+                  {passwordMessage}
+                </div>
+              )}
+            </PrivacySection>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" onClick={closePrivacyModal}>取消</Button>
+            <Button onClick={savePrivacySettings}>
+              <Save size={18} />
+              保存设置
+            </Button>
+            <Button variant="secondary" onClick={handlePasswordChange}>
+              修改密码
             </Button>
           </ModalFooter>
         </ModalContent>

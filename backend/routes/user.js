@@ -4,6 +4,9 @@ const userController = require('../controllers/user');
 const auth = require('../middleware/auth');
 
 router.put('/profile', auth, userController.updateProfile);
+router.put('/password', auth, userController.updatePassword);
+router.get('/privacy', auth, userController.getPrivacy);
+router.put('/privacy', auth, userController.updatePrivacy);
 router.get('/search', auth, userController.searchUsers);
 router.get('/favorites', auth, userController.getFavorites);
 router.get('/:id', auth, userController.getUserById);

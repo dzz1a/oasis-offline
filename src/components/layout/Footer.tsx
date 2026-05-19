@@ -13,13 +13,12 @@ const footerSections = [
       { label: '首页', nav: 'home' },
       { label: '绿洲社区', nav: 'forum' },
       { label: '资源中心', nav: 'resources' },
-      { label: '情景模拟', nav: 'simulation' },
+      { label: '解压游戏', nav: 'simulation' },
     ],
   },
   {
     title: '支持',
     links: [
-      { label: '帮助中心', nav: 'help' },
       { label: '常见问题', nav: 'faq' },
       { label: '联系我们', nav: 'contact' },
       { label: '意见反馈', nav: 'feedback' },

@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  privacy: {
+    showEnergy: { type: Boolean, default: true },
+    showEmotionStatus: { type: Boolean, default: true },
+    showEmotionContent: { type: Boolean, default: false },
+    displayBadges: { type: [mongoose.Schema.Types.ObjectId], default: [], max: 3 }
   }
 });
 

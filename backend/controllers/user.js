@@ -1,5 +1,97 @@
 const User = require('../models/User');
 const Post = require('../models/Post');
+const EmotionRecord = require('../models/EmotionRecord');
+const bcrypt = require('bcryptjs');
+
+const DEFAULT_PRIVACY = {
+  showEnergy: true,
+  showEmotionStatus: true,
+  showEmotionContent: false,
+  displayBadges: []
+};
+
+const normalizePrivacy = (privacy) => {
+  const raw = privacy?.toObject ? privacy.toObject() : privacy || {};
+  return {
+    showEnergy: raw.showEnergy !== false,
+    showEmotionStatus: raw.showEmotionStatus !== false,
+    showEmotionContent: !!raw.showEmotionContent,
+    displayBadges: (raw.displayBadges || []).map((id) => id.toString())
+  };
+};
+
+const buildUserStats = async (userId) => {
+  const ObjectId = require('mongoose').Types.ObjectId;
+  const user = await User.findById(userId);
+
+  const posts = await Post.find({
+    $or: [
+      { author: userId },
+      { author: new ObjectId(userId) },
+      { 'author._id': userId },
+      { 'author._id': new ObjectId(userId) }
+    ]
+  });
+
+  const totalLikes = posts.reduce((sum, post) => sum + post.likes.length, 0);
+
+  return {
+    likes: totalLikes,
+    posts: posts.length,
+    followers: user?.followers?.length || 0,
+    following: user?.following?.length || 0
+  };
+};
+
+exports.updatePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: '请填写所有字段'
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: '两次输入的新密码不一致'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: '新密码长度不能少于6位'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: '原密码不正确'
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: '密码修改成功'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -32,9 +124,66 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+exports.getPrivacy = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    
+    res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+exports.updatePrivacy = async (req, res) => {
+  try {
+    console.log('===== 更新隐私设置 START =====');
+    console.log('请求体:', req.body);
+    console.log('用户ID:', req.user._id);
+    
+    const { showEnergy, showEmotionStatus, showEmotionContent, displayBadges } = req.body;
+
+    const updates = {};
+    if (showEnergy !== undefined) updates['privacy.showEnergy'] = showEnergy;
+    if (showEmotionStatus !== undefined) updates['privacy.showEmotionStatus'] = showEmotionStatus;
+    if (showEmotionContent !== undefined) updates['privacy.showEmotionContent'] = showEmotionContent;
+    if (displayBadges !== undefined) updates['privacy.displayBadges'] = displayBadges;
+
+    console.log('更新内容:', updates);
+    
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      updates,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    console.log('更新成功:', user.privacy);
+    console.log('===== 更新隐私设置 END =====');
+    
+    res.json({
+      success: true,
+      message: '隐私设置更新成功',
+      privacy: user.privacy
+    });
+  } catch (error) {
+    console.error('===== 更新隐私设置失败 =====');
+    console.error('错误:', error.message);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const targetUserId = req.params.id;
+    const user = await User.findById(targetUserId).select('-password');
 
     if (!user) {
       return res.status(404).json({
@@ -43,9 +192,65 @@ exports.getUserById = async (req, res) => {
       });
     }
 
+    const isSelf = req.user._id.toString() === targetUserId.toString();
+    const privacy = normalizePrivacy(user.privacy);
+    const badgeController = require('./badge');
+    const badges = await badgeController.getBadgeList(targetUserId);
+    const stats = await buildUserStats(targetUserId);
+    const earnedBadges = badges.filter((badge) => badge.earned);
+
+    let displayBadges = [];
+    if (privacy.displayBadges.length > 0) {
+      displayBadges = badges.filter((badge) =>
+        privacy.displayBadges.includes(badge._id.toString())
+      );
+    } else {
+      displayBadges = earnedBadges.slice(0, 3);
+    }
+
+    let recentEmotion = null;
+    if (privacy.showEmotionStatus) {
+      const record = await EmotionRecord.findOne({ userId: targetUserId })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      if (record) {
+        recentEmotion = {
+          emotion: record.emotion,
+          intensity: record.intensity,
+          createdAt: record.createdAt
+        };
+
+        if (privacy.showEmotionContent && record.note) {
+          recentEmotion.note = record.note;
+        }
+      }
+    }
+
+    const profile = {
+      ...user.toObject(),
+      privacy,
+      badges,
+      displayBadges,
+      earnedBadgeCount: earnedBadges.length,
+      stats,
+      recentEmotion,
+      postCount: stats.posts,
+      followerCount: stats.followers,
+      followingCount: stats.following,
+      isSelf
+    };
+
+    if (!isSelf) {
+      delete profile.email;
+      if (!privacy.showEnergy) {
+        profile.energyLevel = undefined;
+      }
+    }
+
     res.json({
       success: true,
-      user
+      user: profile
     });
   } catch (error) {
     res.status(400).json({
@@ -217,8 +422,6 @@ exports.followUser = async (req, res) => {
 exports.getUserStats = async (req, res) => {
   try {
     const userId = req.params.id;
-    const ObjectId = require('mongoose').Types.ObjectId;
-
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -227,24 +430,11 @@ exports.getUserStats = async (req, res) => {
       });
     }
 
-    const posts = await Post.find({ 
-      $or: [
-        { author: userId },
-        { author: new ObjectId(userId) },
-        { 'author._id': userId },
-        { 'author._id': new ObjectId(userId) }
-      ]
-    });
-    const totalLikes = posts.reduce((sum, post) => sum + post.likes.length, 0);
+    const stats = await buildUserStats(userId);
 
     res.json({
       success: true,
-      stats: {
-        likes: totalLikes,
-        posts: posts.length,
-        followers: user.followers.length,
-        following: user.following.length
-      }
+      stats
     });
   } catch (error) {
     res.status(400).json({
