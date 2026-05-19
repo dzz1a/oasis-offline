@@ -2277,6 +2277,30 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
             </CardBody>
           </SectionCard>
         </MainContent>
+          </>
+          {isOwnProfile && (
+          <MenuSection>
+            <Card>
+              <CardBody>
+                {[
+                  { icon: Bell, title: '通知设置', desc: '管理通知偏好' },
+                  { icon: Shield, title: '隐私设置', desc: '控制数据和隐私' },
+                  { icon: Activity, title: '数据统计', desc: '查看使用统计' },
+                  { icon: Calendar, title: '日程管理', desc: '管理你的日程' },
+                ].map((item, index) => (
+                  <MenuItem key={index}>
+                    <MenuIcon>
+                      <item.icon size={20} />
+                    </MenuIcon>
+                    <MenuText>
+                      <MenuTitle>{item.title}</MenuTitle>
+                      <MenuDescription>{item.desc}</MenuDescription>
+                    </MenuText>
+                    <ChevronRight size={18} color={theme.colors.neutral[400]} />
+                  </MenuItem>
+                ))}
+              </CardBody>
+            </Card>
 
             {isOwnProfile && (
             <SidebarContent>
