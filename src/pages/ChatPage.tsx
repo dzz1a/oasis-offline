@@ -1022,7 +1022,6 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
                       </MessageItem>
                     );
                   })}
-                  <div ref={messagesEndRef} />
                 </MessagesList>
               </MessagesArea>
 
