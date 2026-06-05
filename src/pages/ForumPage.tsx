@@ -650,6 +650,7 @@ const ModalOverlay = styled.div<{ isOpen: boolean }>`
 const ModalContent = styled.div`
   width: 90%;
   max-width: 720px;
+  max-height: 85vh;
 
   border-radius: 32px;
 
@@ -661,6 +662,8 @@ const ModalContent = styled.div`
     0 30px 80px rgba(15,23,42,0.18);
 
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 `;
 
 const ModalHeader = styled.div`
@@ -706,6 +709,8 @@ const CloseButton = styled.button`
 
 const ModalBody = styled.div`
   padding: 32px;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const FormGroup = styled.div`

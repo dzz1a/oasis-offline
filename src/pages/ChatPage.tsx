@@ -681,7 +681,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
   const [isAddFriendModalOpen, setIsAddFriendModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchFriends();
@@ -701,7 +701,9 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const fetchFriends = async () => {
@@ -978,7 +980,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
                 </ChatActions>
               </ChatHeaderBar>
 
-              <MessagesArea>
+              <MessagesArea ref={messagesAreaRef}>
                 <MessagesList>
                   {messages.map((msg) => {
                     const fromId = typeof msg.from === 'object' ? msg.from._id : msg.from;
