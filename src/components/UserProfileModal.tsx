@@ -5,6 +5,7 @@ import { theme } from '../styles/theme';
 import { Card } from './ui/Card';
 import { Tag } from './ui/Tag';
 import { emotionLabels } from '../data/mockData';
+import { API_URL } from '../config/api';
 
 interface PrivacySettings {
   showEnergy: boolean;
@@ -384,7 +385,7 @@ const UserProfileModal = ({ isOpen, onClose, userId, username }: UserProfileModa
 
       try {
         const response = await fetch(
-          `http://localhost:5000/api/users/${String(userId)}`,
+          `${API_URL}/api/users/${String(userId)}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,

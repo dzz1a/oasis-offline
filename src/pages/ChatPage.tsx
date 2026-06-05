@@ -5,8 +5,9 @@ import { io, Socket } from 'socket.io-client';
 import { theme } from '../styles/theme';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { API_URL } from '../config/api';
 
-const socket = io('http://localhost:5000');
+const socket = io(API_URL);
 
 interface User {
   _id: string;
@@ -705,7 +706,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
 
   const fetchFriends = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends', {
+      const response = await fetch(`${API_URL}/api/friends`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -722,7 +723,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
 
   const fetchFriendRequests = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends/requests', {
+      const response = await fetch(`${API_URL}/api/friends/requests`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -736,7 +737,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
 
   const fetchMessages = async (friendId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/chat/messages/${friendId}`, {
+      const response = await fetch(`${API_URL}/api/chat/messages/${friendId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -757,7 +758,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
     if (!message.trim() || !selectedFriend) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/chat/send', {
+      const response = await fetch(`${API_URL}/api/chat/send`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -794,7 +795,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/search?keyword=${searchQuery}`, {
+      const response = await fetch(`${API_URL}/api/users/search?keyword=${searchQuery}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -808,7 +809,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
 
   const handleSendFriendRequest = async (userId: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends/request', {
+      const response = await fetch(`${API_URL}/api/friends/request`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -828,7 +829,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
 
   const handleAcceptRequest = async (requestId: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends/accept', {
+      const response = await fetch(`${API_URL}/api/friends/accept`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -850,7 +851,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
 
   const handleRejectRequest = async (requestId: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends/reject', {
+      const response = await fetch(`${API_URL}/api/friends/reject`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

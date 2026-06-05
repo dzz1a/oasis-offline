@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 import { theme } from '../styles/theme';
+import { API_URL } from '../config/api';
 
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
@@ -1179,7 +1180,7 @@ export const ForumPage = ({
 
   const fetchFollowing = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${currentUser._id}`, {
+      const response = await fetch(`${API_URL}/api/users/${currentUser._id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -1193,7 +1194,7 @@ export const ForumPage = ({
 
   const fetchFriends = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends', {
+      const response = await fetch(`${API_URL}/api/friends`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -1207,7 +1208,7 @@ export const ForumPage = ({
 
   const handleFollow = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/follow/${userId}`, {
+      const response = await fetch(`${API_URL}/api/users/follow/${userId}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -1261,7 +1262,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        'http://localhost:5000/api/forum/posts',
+        `${API_URL}/api/forum/posts`,
         {
           headers: {
             Authorization:
@@ -1285,7 +1286,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        'http://localhost:5000/api/users/favorites',
+        `${API_URL}/api/users/favorites`,
         {
           headers: {
             Authorization:
@@ -1311,7 +1312,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        `http://localhost:5000/api/forum/posts/${postId}/like`,
+        `${API_URL}/api/forum/posts/${postId}/like`,
         {
           method: 'PUT',
           headers: {
@@ -1342,7 +1343,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        'http://localhost:5000/api/users/favorite',
+        `${API_URL}/api/users/favorite`,
         {
           method: 'POST',
           headers: {
@@ -1388,7 +1389,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        'http://localhost:5000/api/forum/posts',
+        `${API_URL}/api/forum/posts`,
         {
           method: 'POST',
           headers: {
@@ -1443,7 +1444,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        `http://localhost:5000/api/forum/posts/${postId}`,
+        `${API_URL}/api/forum/posts/${postId}`,
         {
           method: 'DELETE',
           headers: {
@@ -1517,7 +1518,7 @@ export const ForumPage = ({
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/forum/posts/${postId}/comments`,
+        `${API_URL}/api/forum/posts/${postId}/comments`,
         {
           method: 'POST',
           headers: {
@@ -1563,7 +1564,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        'http://localhost:5000/api/friends',
+        `${API_URL}/api/friends`,
         {
           headers: {
             Authorization:
@@ -1628,7 +1629,7 @@ export const ForumPage = ({
     try {
 
       const response = await fetch(
-        'http://localhost:5000/api/chat/share',
+        '${API_URL}/api/chat/share',
         {
           method: 'POST',
           headers: {

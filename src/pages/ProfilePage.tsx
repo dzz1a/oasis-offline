@@ -7,6 +7,7 @@ import { Card, CardHeader, CardBody, CardFooter } from '../components/ui/Card';
 import { Tag } from '../components/ui/Tag';
 import { Badge } from '../components/ui/Badge';
 import { mockEmotionRecords, emotionLabels } from '../data/mockData';
+import { API_URL } from '../config/api';
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -1188,7 +1189,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   const fetchTodos = async () => {
     console.log('fetchTodos called');
     try {
-      const response = await fetch('http://localhost:5000/api/todos', {
+      const response = await fetch(`${API_URL}/api/todos`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       console.log('fetchTodos response status:', response.status);
@@ -1221,7 +1222,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     }
     
     try {
-      const response = await fetch('http://localhost:5000/api/users/password', {
+      const response = await fetch(`${API_URL}/api/users/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1251,7 +1252,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     }
     
     try {
-      const response = await fetch('http://localhost:5000/api/todos', {
+      const response = await fetch(`${API_URL}/api/todos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1273,7 +1274,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   
   const toggleTodo = async (todoId: string, completed: boolean) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/todos/${todoId}`, {
+      const response = await fetch(`${API_URL}/api/todos/${todoId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1294,7 +1295,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   
   const deleteTodo = async (todoId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/todos/${todoId}`, {
+      const response = await fetch(`${API_URL}/api/todos/${todoId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -1367,7 +1368,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   
   const openPrivacyModal = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/users/privacy', {
+      const response = await fetch(`${API_URL}/api/users/privacy`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1416,7 +1417,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
       console.log('privacySettings:', privacySettings);
       console.log('selectedBadges:', selectedBadges);
       
-      const response = await fetch('http://localhost:5000/api/users/privacy', {
+      const response = await fetch(`${API_URL}/api/users/privacy`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1457,7 +1458,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   
   const fetchEmotions = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/emotions?month=${currentMonth.getMonth() + 1}&year=${currentMonth.getFullYear()}`, {
+      const response = await fetch(`${API_URL}/api/emotions?month=${currentMonth.getMonth() + 1}&year=${currentMonth.getFullYear()}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -1477,7 +1478,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     if (newEmotion) {
       try {
         if (editingEmotionId) {
-          const response = await fetch(`http://localhost:5000/api/emotions/${editingEmotionId}`, {
+          const response = await fetch(`${API_URL}/api/emotions/${editingEmotionId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -1508,7 +1509,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
             new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDay) : 
             new Date();
           
-          const response = await fetch('http://localhost:5000/api/emotions', {
+          const response = await fetch(`${API_URL}/api/emotions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1545,7 +1546,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   const fetchTasks = async () => {
     try {
       setLoadingTasks(true);
-      const response = await fetch('http://localhost:5000/api/tasks/today', {
+      const response = await fetch(`${API_URL}/api/tasks/today`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -1563,7 +1564,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
 
   const handleCompleteTask = async (taskId: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/tasks/complete', {
+      const response = await fetch(`${API_URL}/api/tasks/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1588,7 +1589,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
   const fetchBadges = async () => {
     try {
       console.log('开始获取徽章数据...');
-      const response = await fetch('http://localhost:5000/api/badges/user', {
+      const response = await fetch(`${API_URL}/api/badges/user`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       console.log('徽章API响应状态:', response.status);
@@ -1624,7 +1625,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
     
     const targetUserId = isOwn ? currentUser.id : viewingUserId!;
     
-    fetch(`http://localhost:5000/api/users/${targetUserId}`, {
+    fetch(`${API_URL}/api/users/${targetUserId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(res => res.json())
@@ -1660,7 +1661,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
 
   const fetchStats = async (userId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/stats/${userId}`, {
+      const response = await fetch(`${API_URL}/api/users/stats/${userId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -1674,7 +1675,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
 
   const fetchFavorites = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/users/favorites', {
+      const response = await fetch(`${API_URL}/api/users/favorites`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
@@ -1708,7 +1709,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
 
   const handleSave = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/profile`, {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1745,7 +1746,7 @@ export const ProfilePage = ({ onNavigate, currentUser, viewingUserId, viewingUse
 
   const handleFollow = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/follow/${user._id}`, {
+      const response = await fetch(`${API_URL}/api/users/follow/${user._id}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

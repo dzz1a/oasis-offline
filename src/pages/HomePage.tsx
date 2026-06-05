@@ -17,6 +17,7 @@ import {
   mockResources,
   mockCommunities,
 } from '../data/mockData';
+import { API_URL } from '../config/api';
 
 interface Post {
   _id: string;
@@ -540,7 +541,7 @@ export const HomePage = ({ onNavigate }: HomePageProps) => {
       return;
     }
 
-    fetch('http://localhost:5000/api/forum/posts', {
+    fetch(`${API_URL}/api/forum/posts`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

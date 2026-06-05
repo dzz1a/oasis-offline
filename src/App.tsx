@@ -3,6 +3,7 @@ import { ThemeProvider } from 'styled-components';
 
 import { theme } from './styles/theme';
 import { GlobalStyles } from './styles/GlobalStyles';
+import { API_URL } from './config/api';
 
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -51,7 +52,7 @@ function App() {
       return;
     }
 
-    fetch('http://localhost:5000/api/auth/me', {
+    fetch(`${API_URL}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

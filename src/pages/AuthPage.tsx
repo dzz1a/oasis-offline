@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { API_URL } from '../config/api';
 
 interface AuthPageProps {
   onLogin: (user: { username: string; email: string; id: string; _id: string; energyLevel?: number }) => void;
@@ -83,8 +84,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
 
     try {
       const url = isLogin 
-        ? 'http://localhost:5000/api/auth/login' 
-        : 'http://localhost:5000/api/auth/register';
+        ? `${API_URL}/api/auth/login` 
+        : `${API_URL}/api/auth/register`;
 
       const response = await fetch(url, {
         method: 'POST',
