@@ -74,7 +74,7 @@ export interface Message {
 export interface EmotionRecord {
   id: string;
   userId: string;
-  emotion: 'happy' | 'sad' | 'anxious' | 'angry' | 'calm' | 'excited';
+  emotion: 'happy' | 'sad' | 'anxious' | 'angry' | 'calm' | 'excited' | 'tired' | 'hopeful';
   intensity: number;
   note?: string;
   createdAt: Date;

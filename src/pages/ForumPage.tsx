@@ -1,10 +1,33 @@
-import { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import { Heart, MessageCircle, Share2, Send, Plus, Filter, Search, X, User, ChevronDown, ChevronUp, Trash2, Bookmark, Users, Copy, Check, Headphones, Volume2, VolumeX, Play, Pause } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
+import styled, { keyframes } from 'styled-components';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Send,
+  Plus,
+  Filter,
+  Search,
+  X,
+  Sparkles,
+  TrendingUp,
+  Users,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Bookmark,
+  Trash2,
+  Copy,
+  Check,
+} from 'lucide-react';
+
 import { theme } from '../styles/theme';
+
 import { Button } from '../components/ui/Button';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Tag } from '../components/ui/Tag';
+import UserProfileModal from '../components/UserProfileModal';
 
 interface PostAuthor {
   _id: string;
@@ -18,7 +41,7 @@ interface Comment {
   content: string;
   replyTo?: PostAuthor;
   replyToComment?: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 interface Post {
@@ -29,8 +52,8 @@ interface Post {
   tags: string[];
   likes: string[];
   comments: Comment[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Friend {
@@ -40,10 +63,9 @@ interface Friend {
 }
 
 interface User {
+  _id: string;
   username: string;
   email: string;
-  id: string;
-  _id: string;
 }
 
 interface ForumPageProps {
@@ -51,41 +73,151 @@ interface ForumPageProps {
   currentUser: User;
 }
 
-// 白噪音列表
-const whiteNoiseList = [
-  { id: 'rain', name: '下雨声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-ambience-17.mp3' },
-  { id: 'waves', name: '海浪声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-sea-waves-ambience-1189.mp3' },
-  { id: 'forest', name: '森林鸟鸣', url: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-1210.mp3' },
-  { id: 'stream', name: '小溪流水', url: 'https://assets.mixkit.co/sfx/preview/mixkit-small-stream-water-flow-1200.mp3' },
-  { id: 'fire', name: '篝火声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackling-1319.mp3' },
-  { id: 'wind', name: '微风声', url: 'https://assets.mixkit.co/sfx/preview/mixkit-breeze-through-trees-1249.mp3' },
-  { id: 'whitenoise', name: '纯白噪音', url: 'https://assets.mixkit.co/sfx/preview/mixkit-static-white-noise-1280.mp3' },
-  { id: 'cafe', name: '咖啡馆', url: 'https://assets.mixkit.co/sfx/preview/mixkit-restaurant-ambience-1217.mp3' },
-  { id: 'library', name: '图书馆', url: 'https://assets.mixkit.co/sfx/preview/mixkit-quiet-library-ambience-1260.mp3' },
-];
+/* =========================
+   Styled Components
+========================= */
+const noiseMove = keyframes`
+  0% {
+    transform: translate(0, 0);
+  }
 
+  25% {
+    transform: translate(-1%, 1%);
+  }
+
+  50% {
+    transform: translate(1%, -1%);
+  }
+
+  75% {
+    transform: translate(1%, 1%);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+`;
 const ForumContainer = styled.div`
-  max-width: 1200px;
+  position: relative;
+
+  min-height: 100vh;
+
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(99, 102, 241, 0.12),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(96, 165, 250, 0.12),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #eef4ff 100%
+    );
+
+  padding: 48px 24px;
+
+  /* 白噪声层 */
+  &::before {
+  
+    content: '';
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: 0.045;
+
+    z-index: 0;
+    animation: ${noiseMove} 0.25s steps(2) infinite;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+
+    mix-blend-mode: soft-light;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+`;
+
+const ForumContentWrapper = styled.div`
+  max-width: 1280px;
   margin: 0 auto;
-  padding: ${theme.spacing[6]} ${theme.spacing[4]};
 `;
 
 const ForumHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${theme.spacing[6]};
+
+  margin-bottom: 48px;
+
+  flex-wrap: wrap;
+  gap: 24px;
+`;
+
+const HeaderLeft = styled.div``;
+
+const ForumBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 16px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.7);
+
+  backdrop-filter: blur(12px);
+
+  color: #6366f1;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  margin-bottom: 18px;
 `;
 
 const ForumTitle = styled.h1`
-  font-size: ${theme.fonts.sizes['2xl']};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
+  font-size: clamp(2.5rem, 5vw, 4rem);
+
+  font-weight: 800;
+
+  line-height: 1.1;
+
+  letter-spacing: -0.04em;
+
+  color: #111827;
+
+  margin-bottom: 14px;
+`;
+
+const ForumSubtitle = styled.p`
+  font-size: 1.05rem;
+
+  line-height: 1.8;
+
+  color: #6b7280;
+
+  max-width: 620px;
 `;
 
 const Actions = styled.div`
   display: flex;
-  gap: ${theme.spacing[3]};
+  align-items: center;
+  gap: 16px;
+
+  flex-wrap: wrap;
 `;
 
 const SearchBar = styled.div`
@@ -95,43 +227,96 @@ const SearchBar = styled.div`
 `;
 
 const SearchInput = styled.input`
-  width: 300px;
-  padding: ${theme.spacing[3]} ${theme.spacing[4]};
-  padding-left: 48px;
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.base};
+  width: 320px;
+
+  padding: 14px 18px 14px 48px;
+
+  border-radius: 18px;
+
+  border: none;
+
+  background: rgba(255,255,255,0.72);
+
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.7),
+    0 10px 30px rgba(15,23,42,0.06);
+
+  font-size: 15px;
+
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+
+    box-shadow:
+      0 0 0 4px rgba(99,102,241,0.14),
+      0 12px 30px rgba(15,23,42,0.08);
+  }
 `;
 
 const SearchIcon = styled.div`
   position: absolute;
-  left: ${theme.spacing[3]};
-  color: ${theme.colors.neutral[400]};
+  left: 16px;
+
+  color: #9ca3af;
 `;
 
 const FilterButton = styled.button`
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[2]};
-  padding: ${theme.spacing[3]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  background: white;
-  color: ${theme.colors.neutral[600]};
+  gap: 8px;
+
+  padding: 14px 18px;
+
+  border-radius: 18px;
+
+  border: none;
+
+  background: rgba(255,255,255,0.72);
+
+  backdrop-filter: blur(14px);
+
+  box-shadow:
+    0 10px 30px rgba(15,23,42,0.06);
+
+  color: #4b5563;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
+
+  transition: all 0.3s ease;
 
   &:hover {
-    background: ${theme.colors.neutral[50]};
+    transform: translateY(-3px);
+
+    background: white;
+  }
+`;
+
+const CreateButton = styled(Button)`
+  border-radius: 18px !important;
+
+  padding: 14px 22px !important;
+
+  box-shadow:
+    0 14px 40px rgba(99,102,241,0.25);
+
+  transition: all 0.3s ease !important;
+
+  &:hover {
+    transform: translateY(-3px);
   }
 `;
 
 const ForumContent = styled.div`
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: ${theme.spacing[6]};
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
 
-  @media (max-width: 900px) {
+  align-items: start;
+
+  @media (max-width: 980px) {
     grid-template-columns: 1fr;
   }
 `;
@@ -139,289 +324,503 @@ const ForumContent = styled.div`
 const PostsList = styled.div``;
 
 const PostCard = styled(Card)`
-  margin-bottom: ${theme.spacing[4]};
+  margin-bottom: 28px;
+
+  border-radius: 28px !important;
+
+  background: rgba(255,255,255,0.72);
+
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.85);
+
+  box-shadow:
+    0 10px 40px rgba(15,23,42,0.08);
+
+  transition: all 0.3s ease !important;
+
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-6px);
+
+    box-shadow:
+      0 24px 60px rgba(15,23,42,0.12);
+  }
 `;
 
-const PostHeader = styled(CardHeader)`
+const PostHeaderStyled = styled(CardHeader)`
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[3]};
-  padding-bottom: ${theme.spacing[3]};
+  gap: 16px;
+
+  padding-bottom: 20px;
 `;
 
 const PostAvatar = styled.div`
-  width: 48px;
-  height: 48px;
+  width: 54px;
+  height: 54px;
+
   border-radius: 50%;
-  background: linear-gradient(135deg, ${theme.colors.primary[400]} 0%, ${theme.colors.calm[400]} 100%);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 100%
+  );
+
   color: white;
-  font-weight: ${theme.fonts.weights.medium};
+
+  font-weight: 700;
 `;
 
 const PostAuthorInfo = styled.div`
   flex: 1;
 `;
 
-const PostAuthor = styled.span`
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
+const PostAuthor = styled.div`
+  font-size: 16px;
+  font-weight: 700;
+
+  color: #111827;
+
+  margin-bottom: 4px;
 `;
 
-const PostMeta = styled.span`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[500]};
+const PostMeta = styled.div`
+  font-size: 14px;
+
+  color: #9ca3af;
+`;
+
+const DeleteButton = styled.button`
+  width: 40px;
+  height: 40px;
+
+  border-radius: 12px;
+
+  border: none;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  background: rgba(239,68,68,0.08);
+
+  color: #ef4444;
+
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: rgba(239,68,68,0.16);
+  }
 `;
 
 const PostTitle = styled.h2`
-  font-size: ${theme.fonts.sizes.xl};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-  margin-bottom: ${theme.spacing[2]};
+  font-size: 1.7rem;
+
+  font-weight: 800;
+
+  line-height: 1.4;
+
+  color: #111827;
+
+  margin-bottom: 18px;
 `;
 
 const PostContent = styled.p`
-  color: ${theme.colors.neutral[600]};
-  line-height: 1.8;
-  margin-bottom: ${theme.spacing[4]};
+  color: #6b7280;
+
+  line-height: 1.9;
+
+  margin-bottom: 28px;
+
+  white-space: pre-wrap;
 `;
 
 const PostTags = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: ${theme.spacing[2]};
-  margin-bottom: ${theme.spacing[4]};
+  gap: 10px;
+
+  margin-bottom: 28px;
+`;
+
+const StyledTag = styled(Tag)`
+  background: rgba(99,102,241,0.08) !important;
+
+  color: #6366f1 !important;
+
+  border-radius: 999px !important;
+
+  border: none !important;
+
+  padding: 6px 12px !important;
+`;
+
+const Divider = styled.div`
+  height: 1px;
+
+  background: rgba(229,231,235,0.7);
+
+  margin-bottom: 18px;
 `;
 
 const PostFooter = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: ${theme.spacing[3]};
-  border-top: 1px solid ${theme.colors.neutral[100]};
+
+  flex-wrap: wrap;
+  gap: 16px;
 `;
 
 const PostActions = styled.div`
   display: flex;
-  gap: ${theme.spacing[6]};
+  gap: 12px;
+
+  flex-wrap: wrap;
 `;
 
 const ActionButton = styled.button`
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[1]};
-  padding: ${theme.spacing[2]} ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  background: transparent;
+  gap: 8px;
+
+  padding: 10px 16px;
+
+  border-radius: 14px;
+
   border: none;
-  color: ${theme.colors.neutral[600]};
+
+  background: transparent;
+
+  color: #6b7280;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
+
+  transition: all 0.25s ease;
 
   &:hover {
-    background: ${theme.colors.neutral[100]};
-    color: ${theme.colors.neutral[800]};
+    background: rgba(99,102,241,0.08);
+
+    color: #6366f1;
   }
 
   &.liked {
-    color: ${theme.colors.danger[500]};
+    color: #ef4444;
+  }
+
+  &.favorited {
+    color: #6366f1;
   }
 `;
 
-const Sidebar = styled.aside``;
+const ReadMore = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #6366f1;
+`;
+
+const Sidebar = styled.aside`
+  position: sticky;
+  top: 24px;
+`;
 
 const SidebarCard = styled(Card)`
-  margin-bottom: ${theme.spacing[4]};
+  margin-bottom: 24px;
+
+  border-radius: 28px !important;
+
+  background: rgba(255,255,255,0.72);
+
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.85);
+
+  box-shadow:
+    0 10px 40px rgba(15,23,42,0.06);
 `;
 
 const SidebarTitle = styled.h3`
-  font-size: ${theme.fonts.sizes.lg};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-  margin-bottom: ${theme.spacing[4]};
-`;
+  font-size: 1.15rem;
 
-const CommunitiesList = styled.div``;
+  font-weight: 700;
+
+  color: #111827;
+`;
 
 const CommunityItem = styled.div`
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[3]};
-  padding: ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
+  gap: 14px;
+
+  padding: 14px;
+
+  border-radius: 18px;
+
+  transition: all 0.25s ease;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
 
   &:hover {
-    background: ${theme.colors.neutral[50]};
+    background: rgba(99,102,241,0.06);
+
+    transform: translateX(4px);
   }
 `;
 
 const CommunityIcon = styled.div`
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
+
   border-radius: 50%;
-  background: linear-gradient(135deg, ${theme.colors.primary[400]} 0%, ${theme.colors.calm[400]} 100%);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 100%
+  );
+
   color: white;
+
+  font-weight: 700;
 `;
 
 const CommunityInfo = styled.div``;
 
-const CommunityName = styled.span`
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
+const CommunityName = styled.div`
+  font-weight: 700;
+
+  color: #111827;
+
+  margin-bottom: 4px;
 `;
 
-const CommunityMembers = styled.span`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[500]};
+const CommunityMembers = styled.div`
+  font-size: 14px;
+
+  color: #9ca3af;
 `;
 
-const TrendingTags = styled.div``;
-
-const TagList = styled.div`
+const TrendingTags = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: ${theme.spacing[2]};
+  gap: 10px;
 `;
 
-const CreatePostModal = styled.div<{ isOpen: boolean }>`
+const ModalOverlay = styled.div<{ isOpen: boolean }>`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+
+  inset: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+
+  background: rgba(15,23,42,0.4);
+
+  backdrop-filter: blur(10px);
+
+  z-index: 999;
+
   opacity: ${({ isOpen }) => isOpen ? 1 : 0};
+
   visibility: ${({ isOpen }) => isOpen ? 'visible' : 'hidden'};
-  transition: all ${theme.transitions.normal};
+
+  transition: all 0.3s ease;
 `;
 
 const ModalContent = styled.div`
-  background: white;
-  border-radius: ${theme.borderRadius.xl};
   width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 720px;
+
+  border-radius: 32px;
+
+  background: rgba(255,255,255,0.92);
+
+  backdrop-filter: blur(20px);
+
+  box-shadow:
+    0 30px 80px rgba(15,23,42,0.18);
+
+  overflow: hidden;
 `;
 
 const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${theme.spacing[4]} ${theme.spacing[6]};
-  border-bottom: 1px solid ${theme.colors.neutral[100]};
+
+  padding: 28px 32px;
+
+  border-bottom: 1px solid rgba(229,231,235,0.7);
 `;
 
 const ModalTitle = styled.h2`
-  font-size: ${theme.fonts.sizes.xl};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
+  font-size: 1.5rem;
+
+  font-weight: 800;
+
+  color: #111827;
 `;
 
 const CloseButton = styled.button`
-  width: 32px;
-  height: 32px;
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.neutral[100]};
+  width: 40px;
+  height: 40px;
+
+  border-radius: 12px;
+
   border: none;
+
+  background: rgba(243,244,246,0.8);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
+
+  transition: all 0.25s ease;
 
   &:hover {
-    background: ${theme.colors.neutral[200]};
+    background: rgba(229,231,235,1);
   }
 `;
 
 const ModalBody = styled.div`
-  padding: ${theme.spacing[6]};
+  padding: 32px;
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: ${theme.spacing[4]};
+  margin-bottom: 24px;
 `;
 
 const Label = styled.label`
   display: block;
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[700]};
-  margin-bottom: ${theme.spacing[2]};
+
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #374151;
+
+  margin-bottom: 10px;
 `;
 
-const TitleInput = styled.input`
+const Input = styled.input`
   width: 100%;
-  padding: ${theme.spacing[3]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.lg};
+
+  padding: 16px 18px;
+
+  border-radius: 18px;
+
+  border: none;
+
+  background: rgba(243,244,246,0.8);
+
+  font-size: 15px;
+
+  transition: all 0.25s ease;
+
+  &:focus {
+    outline: none;
+
+    box-shadow:
+      0 0 0 4px rgba(99,102,241,0.12);
+  }
 `;
 
-const ContentTextarea = styled.textarea`
+const TextArea = styled.textarea`
   width: 100%;
-  min-height: 200px;
-  padding: ${theme.spacing[3]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.base};
-`;
 
-const TagsInput = styled.input`
-  width: 100%;
-  padding: ${theme.spacing[3]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.base};
+  min-height: 220px;
+
+  padding: 18px;
+
+  border-radius: 20px;
+
+  border: none;
+
+  resize: none;
+
+  background: rgba(243,244,246,0.8);
+
+  font-size: 15px;
+
+  line-height: 1.8;
+
+  transition: all 0.25s ease;
+
+  &:focus {
+    outline: none;
+
+    box-shadow:
+      0 0 0 4px rgba(99,102,241,0.12);
+  }
 `;
 
 const ModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: ${theme.spacing[3]};
-  padding: ${theme.spacing[4]} ${theme.spacing[6]};
-  border-top: 1px solid ${theme.colors.neutral[100]};
+  gap: 16px;
+
+  padding: 24px 32px;
+
+  border-top: 1px solid rgba(229,231,235,0.7);
 `;
 
 const CommentsSection = styled.div`
-  margin-top: ${theme.spacing[4]};
-  padding-top: ${theme.spacing[4]};
-  border-top: 1px solid ${theme.colors.neutral[100]};
+  margin-top: 24px;
 `;
 
 const CommentsList = styled.div`
-  margin-bottom: ${theme.spacing[4]};
+  margin-bottom: 18px;
 `;
 
 const CommentItem = styled.div`
   display: flex;
-  gap: ${theme.spacing[3]};
-  padding: ${theme.spacing[3]} 0;
-  border-bottom: 1px solid ${theme.colors.neutral[50]};
+  gap: 14px;
+
+  padding: 16px 0;
+
+  border-bottom: 1px solid rgba(229,231,235,0.6);
 `;
 
 const CommentAvatar = styled.div`
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
+
   border-radius: 50%;
-  background: linear-gradient(135deg, ${theme.colors.primary[400]} 0%, ${theme.colors.calm[400]} 100%);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 100%
+  );
+
   color: white;
-  font-size: ${theme.fonts.sizes.sm};
-  font-weight: ${theme.fonts.weights.medium};
+
+  font-weight: 700;
+
   flex-shrink: 0;
 `;
 
@@ -429,367 +828,454 @@ const CommentContent = styled.div`
   flex: 1;
 `;
 
-const CommentAuthor = styled.span`
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
-  margin-right: ${theme.spacing[2]};
+const CommentAuthor = styled.div`
+  font-weight: 700;
+
+  color: #111827;
+
+  margin-bottom: 4px;
 `;
 
-const CommentText = styled.p`
-  color: ${theme.colors.neutral[600]};
-  margin-top: ${theme.spacing[1]};
+const CommentTime = styled.div`
+  font-size: 13px;
+
+  color: #9ca3af;
+
+  margin-bottom: 8px;
+`;
+
+const CommentText = styled.div`
+  line-height: 1.8;
+
+  color: #4b5563;
+
+  white-space: pre-wrap;
+`;
+
+const ReplyInfo = styled.div`
+  margin-bottom: 8px;
+
+  color: #6366f1;
+
+  font-size: 14px;
+
+  font-weight: 600;
+`;
+
+const ReplyButton = styled.button`
+  margin-top: 10px;
+
+  border: none;
+
+  background: rgba(99,102,241,0.08);
+
+  color: #6366f1;
+
+  padding: 8px 12px;
+
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+
+  &:hover {
+    background: rgba(99,102,241,0.14);
+  }
+`;
+
+const CommentInputWrapper = styled.div`
+  display: flex;
+  gap: 12px;
+
+  margin-top: 16px;
 `;
 
 const CommentInput = styled.input`
   flex: 1;
-  padding: ${theme.spacing[2]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.base};
+
+  border: none;
+
+  background: rgba(243,244,246,0.8);
+
+  padding: 14px 16px;
+
+  border-radius: 16px;
+
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+
+    box-shadow:
+      0 0 0 4px rgba(99,102,241,0.12);
+  }
 `;
 
 const CommentSubmit = styled.button`
-  padding: ${theme.spacing[2]} ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.primary[500]};
+  border: none;
+
+  border-radius: 16px;
+
+  padding: 0 18px;
+
+  background: #6366f1;
+
   color: white;
-  border: none;
+
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing[1]};
+
+  transition: all 0.25s ease;
 
   &:hover {
-    background: ${theme.colors.primary[600]};
+    background: #4f46e5;
   }
 `;
 
-const ReplyButton = styled.button`
-  padding: ${theme.spacing[1]} ${theme.spacing[2]};
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.neutral[100]};
-  border: none;
-  cursor: pointer;
-  color: ${theme.colors.neutral[600]};
-  font-size: ${theme.fonts.sizes.sm};
-  margin-top: ${theme.spacing[2]};
-
-  &:hover {
-    background: ${theme.colors.neutral[200]};
-  }
-`;
-
-const ReplyInput = styled.input`
-  width: 100%;
-  padding: ${theme.spacing[2]} ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  border: 1px solid ${theme.colors.neutral[200]};
-  font-size: ${theme.fonts.sizes.sm};
-  margin-top: ${theme.spacing[2]};
-`;
-
-const ShareModal = styled.div<{ isOpen: boolean }>`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
+const ReplyNotice = styled.div`
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  opacity: ${({ isOpen }) => isOpen ? 1 : 0};
-  visibility: ${({ isOpen }) => isOpen ? 'visible' : 'hidden'};
-  transition: all ${theme.transitions.normal};
+  gap: 10px;
+
+  margin-bottom: 14px;
+
+  padding: 10px 14px;
+
+  border-radius: 14px;
+
+  background: rgba(99,102,241,0.08);
+
+  color: #6366f1;
+
+  font-size: 14px;
+
+  font-weight: 600;
+`;
+
+const CancelReplyButton = styled.button`
+  border: none;
+
+  background: transparent;
+
+  color: #9ca3af;
+
+  cursor: pointer;
 `;
 
 const ShareModalContent = styled.div`
-  background: white;
-  border-radius: ${theme.borderRadius.xl};
   width: 90%;
-  max-width: 450px;
-`;
+  max-width: 500px;
 
-const ShareModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: ${theme.spacing[4]} ${theme.spacing[6]};
-  border-bottom: 1px solid ${theme.colors.neutral[100]};
-`;
+  border-radius: 28px;
 
-const ShareModalTitle = styled.h2`
-  font-size: ${theme.fonts.sizes.xl};
-  font-weight: ${theme.fonts.weights.bold};
-  color: ${theme.colors.neutral[800]};
-`;
+  background: rgba(255,255,255,0.94);
 
-const ShareModalBody = styled.div`
-  padding: ${theme.spacing[6]};
+  backdrop-filter: blur(20px);
+
+  overflow: hidden;
 `;
 
 const ShareOption = styled.button`
+  width: 100%;
+
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[3]};
-  width: 100%;
-  padding: ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  background: transparent;
+  gap: 16px;
+
+  padding: 16px;
+
   border: none;
-  text-align: left;
+
+  border-radius: 18px;
+
+  background: transparent;
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
+
+  transition: all 0.25s ease;
 
   &:hover {
-    background: ${theme.colors.neutral[50]};
+    background: rgba(99,102,241,0.06);
   }
 `;
 
 const ShareIcon = styled.div`
-  width: 44px;
-  height: 44px;
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.primary[100]};
+  width: 48px;
+  height: 48px;
+
+  border-radius: 14px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${theme.colors.primary[600]};
+
+  background: rgba(99,102,241,0.08);
+
+  color: #6366f1;
 `;
 
-const ShareText = styled.div``;
-
-const ShareTitle = styled.span`
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
-  display: block;
+const ShareText = styled.div`
+  text-align: left;
 `;
 
-const ShareDesc = styled.span`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[500]};
+const ShareTitle = styled.div`
+  font-weight: 700;
+
+  color: #111827;
+
+  margin-bottom: 4px;
+`;
+
+const ShareDesc = styled.div`
+  font-size: 14px;
+
+  color: #9ca3af;
+`;
+
+const CopiedMessage = styled.div`
+  margin-top: 14px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: rgba(34,197,94,0.1);
+
+  color: #16a34a;
+
+  padding: 10px 14px;
+
+  border-radius: 12px;
 `;
 
 const FriendsList = styled.div`
-  max-height: 200px;
+  max-height: 220px;
+
   overflow-y: auto;
-  margin-bottom: ${theme.spacing[4]};
+
+  margin-top: 16px;
 `;
 
-const FriendItem = styled.button`
+const FriendItem = styled.button<{ selected: boolean }>`
+  width: 100%;
+
   display: flex;
   align-items: center;
-  gap: ${theme.spacing[3]};
-  width: 100%;
-  padding: ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  background: transparent;
-  border: 2px solid transparent;
-  text-align: left;
+  gap: 14px;
+
+  padding: 14px;
+
+  border-radius: 18px;
+
+  border: ${({ selected }) =>
+    selected
+      ? '2px solid #6366f1'
+      : '2px solid transparent'};
+
+  background: ${({ selected }) =>
+    selected
+      ? 'rgba(99,102,241,0.08)'
+      : 'transparent'};
+
   cursor: pointer;
-  transition: all ${theme.transitions.fast};
+
+  transition: all 0.25s ease;
+
+  margin-bottom: 10px;
 
   &:hover {
-    background: ${theme.colors.neutral[50]};
-  }
-
-  &.selected {
-    border-color: ${theme.colors.primary[500]};
-    background: ${theme.colors.primary[50]};
+    background: rgba(99,102,241,0.06);
   }
 `;
 
 const FriendAvatar = styled.div`
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
+
   border-radius: 50%;
-  background: linear-gradient(135deg, ${theme.colors.primary[400]} 0%, ${theme.colors.calm[400]} 100%);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  background: linear-gradient(
+    135deg,
+    #6366f1 0%,
+    #8b5cf6 100%
+  );
+
   color: white;
-  font-size: ${theme.fonts.sizes.sm};
-  font-weight: ${theme.fonts.weights.medium};
+
+  font-weight: 700;
 `;
 
-const FriendName = styled.span`
+const FriendName = styled.div`
   flex: 1;
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
+
+  font-weight: 700;
+
+  text-align: left;
 `;
 
-const CopiedMessage = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing[2]};
-  padding: ${theme.spacing[2]} ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  background: ${theme.colors.success[100]};
-  color: ${theme.colors.success[600]};
-  margin-top: ${theme.spacing[3]};
-`;
+/* =========================
+   Component
+========================= */
 
-// ========== 静音仓样式 ==========
-const QuietRoomCard = styled.div`
-  background: linear-gradient(135deg, ${theme.colors.calm[50]} 0%, ${theme.colors.primary[50]} 100%);
-  border-radius: ${theme.borderRadius.lg};
-  padding: ${theme.spacing[4]};
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid ${theme.colors.calm[200]};
-  display: flex;
-  align-items: center;
-  gap: ${theme.spacing[3]};
+export const ForumPage = ({
+  onNavigate,
+  currentUser,
+}: ForumPageProps) => {
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.05);
-  }
-`;
+  const [posts, setPosts] = useState<Post[]>([]);
 
-const QuietRoomIcon = styled.div`
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, ${theme.colors.calm[500]} 0%, ${theme.colors.primary[500]} 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-`;
-
-const QuietRoomText = styled.div`
-  flex: 1;
-`;
-
-const QuietRoomTitle = styled.div`
-  font-weight: ${theme.fonts.weights.medium};
-  color: ${theme.colors.neutral[800]};
-  font-size: ${theme.fonts.sizes.base};
-`;
-
-const QuietRoomDesc = styled.div`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.neutral[600]};
-  margin-top: 2px;
-`;
-
-const NoiseGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: ${theme.spacing[3]};
-  margin-bottom: ${theme.spacing[4]};
-`;
-
-const NoiseItem = styled.div<{ active: boolean }>`
-  padding: ${theme.spacing[3]};
-  border-radius: ${theme.borderRadius.md};
-  text-align: center;
-  cursor: pointer;
-  border: 2px solid ${props => props.active ? theme.colors.primary[500] : theme.colors.neutral[200]};
-  background: ${props => props.active ? theme.colors.primary[50] : '#fff'};
-`;
-
-const NoisePlayer = styled.div`
-  background: ${theme.colors.neutral[50]};
-  padding: ${theme.spacing[4]};
-  border-radius: ${theme.borderRadius.md};
-  text-align: center;
-`;
-
-const PlayButton = styled.button`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, ${theme.colors.primary[500]}, ${theme.colors.calm[500]});
-  color: white;
-  border: none;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-`;
-
-const VolumeBar = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-`;
-
-export const ForumPage = ({ onNavigate, currentUser }: ForumPageProps) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
-  const [posts, setPosts] = useState<(Post & { author: PostAuthor })[]>([]);
-  const [expandedPosts, setExpandedPosts] = useState<string[]>([]);
-  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [sharePostId, setSharePostId] = useState<string | null>(null);
-  const [shareFriends, setShareFriends] = useState<Friend[]>([]);
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [replyTo, setReplyTo] = useState<{ postId: string; commentId: string; authorId: string; authorName: string } | null>(null);
 
-  // 静音仓状态
-  const [quietRoomOpen, setQuietRoomOpen] = useState(false);
-  const [currentNoise, setCurrentNoise] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.5);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [expandedPosts, setExpandedPosts] = useState<string[]>([]);
+
+  const [commentInputs, setCommentInputs] =
+    useState<Record<string, string>>({});
+
+  const [isModalOpen, setIsModalOpen] =
+    useState(false);
+
+  const [title, setTitle] = useState('');
+
+  const [content, setContent] = useState('');
+
+  const [tags, setTags] = useState('');
+
+  const [replyTo, setReplyTo] = useState<{
+    postId: string;
+    commentId: string;
+    authorId: string;
+    authorName: string;
+  } | null>(null);
+
+  const [isShareModalOpen, setIsShareModalOpen] =
+    useState(false);
+
+  const [sharePostId, setSharePostId] =
+    useState<string | null>(null);
+
+  const [shareFriends, setShareFriends] =
+    useState<Friend[]>([]);
+
+  const [selectedFriend, setSelectedFriend] =
+    useState<string | null>(null);
+
+  const [copied, setCopied] = useState(false);
+  const [following, setFollowing] = useState<string[]>([]);
+  const [friends, setFriends] = useState<string[]>([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [viewingUserId, setViewingUserId] = useState('');
+  const [viewingUsername, setViewingUsername] = useState('');
 
   useEffect(() => {
     fetchPosts();
     fetchFavorites();
+    fetchFollowing();
+    fetchFriends();
   }, []);
 
-  // 音频切换
-  useEffect(() => {
-    if (!audioRef.current || !currentNoise) return;
-    const noise = whiteNoiseList.find(n => n.id === currentNoise);
-    if (!noise) return;
-    audioRef.current.src = noise.url;
-    audioRef.current.loop = true;
-    if (isPlaying) audioRef.current.play().catch(console.warn);
-  }, [currentNoise, isPlaying]);
-
-  // 音量控制
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
-
-  const togglePlay = () => {
-    if (!audioRef.current || !currentNoise) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(console.warn);
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const closeQuietRoom = () => {
-    if (audioRef.current) audioRef.current.pause();
-    setQuietRoomOpen(false);
-    setCurrentNoise(null);
-    setIsPlaying(false);
-  };
-
-  const fetchPosts = async () => {
+  const fetchFollowing = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/forum/posts', {
+      const response = await fetch(`http://localhost:5000/api/users/${currentUser._id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
+      if (data.user && data.user.following) {
+        setFollowing(data.user.following.map((f: string) => f.toString()));
+      }
+    } catch (err) {
+      console.error('获取关注列表失败:', err);
+    }
+  };
+
+  const fetchFriends = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/friends', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      const data = await response.json();
+      if (data.success && data.friends) {
+        setFriends(data.friends.map((f: any) => f._id.toString()));
+      }
+    } catch (err) {
+      console.error('获取好友列表失败:', err);
+    }
+  };
+
+  const handleFollow = async (userId: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/follow/${userId}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFollowing(prev => 
+          data.isFollowing 
+            ? [...prev, userId]
+            : prev.filter(id => id !== userId)
+        );
+      } else {
+        if (data.message === '已经是好友，默认已关注') {
+          setFollowing(prev => [...new Set([...prev, userId])]);
+        }
+      }
+    } catch (err) {
+      console.error('关注失败:', err);
+    }
+  };
+
+  const handleViewProfile = (userId: string, username: string) => {
+    setViewingUserId(String(userId));
+    setViewingUsername(username);
+    setIsProfileModalOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileModalOpen(false);
+    setViewingUserId('');
+    setViewingUsername('');
+  };
+
+  const totalComments = useMemo(() => {
+    return posts.reduce(
+      (sum, post) => sum + post.comments.length,
+      0
+    );
+  }, [posts]);
+
+  const totalLikes = useMemo(() => {
+    return posts.reduce(
+      (sum, post) => sum + post.likes.length,
+      0
+    );
+  }, [posts]);
+
+  const fetchPosts = async () => {
+    try {
+
+      const response = await fetch(
+        'http://localhost:5000/api/forum/posts',
+        {
+          headers: {
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
       if (data.success) {
         setPosts(data.posts);
       }
+
     } catch (err) {
       console.error('获取帖子失败:', err);
     }
@@ -797,579 +1283,1244 @@ export const ForumPage = ({ onNavigate, currentUser }: ForumPageProps) => {
 
   const fetchFavorites = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/users/favorites', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+
+      const response = await fetch(
+        'http://localhost:5000/api/users/favorites',
+        {
+          headers: {
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
       const data = await response.json();
+
       if (data.success) {
-        setFavorites(data.favorites.map((fav: Post) => fav._id));
+        setFavorites(
+          data.favorites.map((fav: Post) => fav._id)
+        );
       }
+
     } catch (err) {
       console.error('获取收藏失败:', err);
     }
   };
 
-  const handleFavorite = async (postId: string) => {
-    console.log('尝试收藏帖子:', postId);
-    try {
-      const response = await fetch('http://localhost:5000/api/users/favorite', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ postId })
-      });
-      console.log('收藏响应状态:', response.status);
-      const data = await response.json();
-      console.log('收藏响应数据:', data);
-      if (data.success) {
-        setFavorites(prev => 
-          prev.includes(postId) 
-            ? prev.filter(id => id !== postId)
-            : [...prev, postId]
-        );
-        console.log('收藏状态已更新');
-      }
-    } catch (err) {
-      console.error('收藏失败:', err);
-    }
-  };
-
-  const openShareModal = async (postId: string) => {
-    setSharePostId(postId);
-    try {
-      const response = await fetch('http://localhost:5000/api/friends', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setShareFriends(data.friends);
-      }
-    } catch (err) {
-      console.error('获取好友失败:', err);
-    }
-    setIsShareModalOpen(true);
-  };
-
-  const closeShareModal = () => {
-    setIsShareModalOpen(false);
-    setSharePostId(null);
-    setSelectedFriend(null);
-  };
-
-  const copyLink = async (postId: string) => {
-    const url = `${window.location.origin}/forum/post/${postId}`;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareToFriend = async () => {
-    if (!selectedFriend || !sharePostId) return;
-    try {
-      const response = await fetch('http://localhost:5000/api/chat/share', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ friendId: selectedFriend, postId: sharePostId })
-      });
-      const data = await response.json();
-      if (data.success) {
-        alert('已成功分享帖子给好友！');
-      } else {
-        alert('分享失败: ' + data.message);
-      }
-    } catch (err) {
-      console.error('分享失败:', err);
-      alert('分享失败，请重试');
-    }
-    closeShareModal();
-  };
-
   const handleLike = async (postId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/forum/posts/${postId}/like`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+
+      const response = await fetch(
+        `http://localhost:5000/api/forum/posts/${postId}/like`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
       const data = await response.json();
+
       if (data.success) {
-        setPosts(prev => prev.map(post => 
-          post._id === postId ? data.post : post
-        ));
+        setPosts((prev) =>
+          prev.map((post) =>
+            post._id === postId
+              ? data.post
+              : post
+          )
+        );
       }
+
     } catch (err) {
       console.error('点赞失败:', err);
     }
   };
 
-  const handleSubmit = async () => {
-    alert(`准备发帖\n标题: ${title}\n内容: ${content}`);
-    console.log('开始发帖，标题:', title, '内容:', content);
+  const handleFavorite = async (postId: string) => {
     try {
-      const token = localStorage.getItem('token');
-      console.log('token:', token ? '已获取' : '未获取');
-      
-      const response = await fetch('http://localhost:5000/api/forum/posts', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title,
-          content,
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean)
-        })
-      });
 
-      console.log('响应状态:', response.status);
+      const response = await fetch(
+        'http://localhost:5000/api/users/favorite',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ postId }),
+        }
+      );
+
       const data = await response.json();
-      console.log('响应数据:', data);
-      
+
       if (data.success) {
-        setPosts(prev => [data.post, ...prev]);
-        console.log('帖子添加成功');
-      } else {
-        console.log('发帖失败:', data.message);
+
+        setFavorites((prev) =>
+          prev.includes(postId)
+            ? prev.filter((id) => id !== postId)
+            : [...prev, postId]
+        );
       }
+
     } catch (err) {
-      console.error('发帖异常:', err);
+      console.error('收藏失败:', err);
     }
-    
-    setIsModalOpen(false);
-    setTitle('');
-    setContent('');
-    setTags('');
   };
 
   const toggleComments = (postId: string) => {
-    setExpandedPosts(prev => 
-      prev.includes(postId) 
-        ? prev.filter(id => id !== postId)
+
+    setExpandedPosts((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
         : [...prev, postId]
     );
   };
 
-  const handleComment = async (postId: string) => {
-    const commentContent = commentInputs[postId];
-    if (!commentContent?.trim()) return;
+  const handleSubmit = async () => {
+
+    if (!title.trim() || !content.trim()) {
+      return;
+    }
 
     try {
-      const body: { content: string; replyTo?: string; replyToComment?: string } = { content: commentContent };
-      if (replyTo && replyTo.postId === postId) {
-        body.replyTo = replyTo.authorId;
-        body.replyToComment = replyTo.commentId;
-      }
 
-      const response = await fetch(`http://localhost:5000/api/forum/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(body)
-      });
+      const response = await fetch(
+        'http://localhost:5000/api/forum/posts',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            title,
+            content,
+            tags: tags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+          }),
+        }
+      );
 
       const data = await response.json();
+
       if (data.success) {
-        setPosts(prev => prev.map(post => 
-          post._id === postId ? data.post : post
-        ));
-        setCommentInputs(prev => ({ ...prev, [postId]: '' }));
-        setReplyTo(null);
+
+        setPosts((prev) => [
+          data.post,
+          ...prev,
+        ]);
+
+        setTitle('');
+        setContent('');
+        setTags('');
+
+        setIsModalOpen(false);
       }
+
     } catch (err) {
-      console.error('评论失败:', err);
+      console.error('发帖失败:', err);
     }
   };
 
-  const handleReply = (postId: string, commentId: string, authorId: string, authorName: string) => {
-    setReplyTo({ postId, commentId, authorId, authorName });
-  };
+  const handleDeletePost = async (
+    postId: string
+  ) => {
 
-  const handleDeletePost = async (postId: string) => {
-    if (!window.confirm('确定要删除这篇帖子吗？')) return;
+    const confirmDelete = window.confirm(
+      '确定删除这篇帖子吗？'
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/forum/posts/${postId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+
+      const response = await fetch(
+        `http://localhost:5000/api/forum/posts/${postId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
 
       const data = await response.json();
+
       if (data.success) {
-        setPosts(prev => prev.filter(post => post._id !== postId));
+        setPosts((prev) =>
+          prev.filter(
+            (post) => post._id !== postId
+          )
+        );
       }
+
     } catch (err) {
       console.error('删除失败:', err);
     }
   };
 
+  const handleReply = (
+    postId: string,
+    commentId: string,
+    authorId: string,
+    authorName: string
+  ) => {
+
+    setReplyTo({
+      postId,
+      commentId,
+      authorId,
+      authorName,
+    });
+  };
+
+  const handleComment = async (
+    postId: string
+  ) => {
+
+    const content =
+      commentInputs[postId];
+
+    if (!content?.trim()) {
+      return;
+    }
+
+    try {
+
+      const body: {
+        content: string;
+        replyTo?: string;
+        replyToComment?: string;
+      } = {
+        content,
+      };
+
+      if (
+        replyTo &&
+        replyTo.postId === postId
+      ) {
+
+        body.replyTo =
+          replyTo.authorId;
+
+        body.replyToComment =
+          replyTo.commentId;
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/forum/posts/${postId}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        setPosts((prev) =>
+          prev.map((post) =>
+            post._id === postId
+              ? data.post
+              : post
+          )
+        );
+
+        setCommentInputs((prev) => ({
+          ...prev,
+          [postId]: '',
+        }));
+
+        setReplyTo(null);
+      }
+
+    } catch (err) {
+      console.error('评论失败:', err);
+    }
+  };
+
+  const openShareModal = async (
+    postId: string
+  ) => {
+
+    setSharePostId(postId);
+
+    try {
+
+      const response = await fetch(
+        'http://localhost:5000/api/friends',
+        {
+          headers: {
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setShareFriends(data.friends);
+      }
+
+    } catch (err) {
+      console.error('获取好友失败:', err);
+    }
+
+    setIsShareModalOpen(true);
+  };
+
+  const closeShareModal = () => {
+
+    setIsShareModalOpen(false);
+
+    setSelectedFriend(null);
+
+    setSharePostId(null);
+  };
+
+  const copyLink = async (
+    postId: string
+  ) => {
+
+    try {
+
+      const url =
+        `${window.location.origin}/forum/post/${postId}`;
+
+      await navigator.clipboard.writeText(url);
+
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+
+    } catch (err) {
+      console.error('复制失败:', err);
+    }
+  };
+
+  const shareToFriend = async () => {
+
+    if (
+      !selectedFriend ||
+      !sharePostId
+    ) {
+      return;
+    }
+
+    try {
+
+      const response = await fetch(
+        'http://localhost:5000/api/chat/share',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization:
+              `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            friendId: selectedFriend,
+            postId: sharePostId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        alert('分享成功');
+
+      } else {
+
+        alert(data.message || '分享失败');
+      }
+
+    } catch (err) {
+      console.error('分享失败:', err);
+    }
+
+    closeShareModal();
+  };
+
   return (
+
     <ForumContainer>
-      <ForumHeader>
-        <ForumTitle>绿洲社区</ForumTitle>
-        <Actions>
-          <SearchBar>
-            <SearchIcon>
-              <Search size={20} />
-            </SearchIcon>
-            <SearchInput placeholder="搜索话题..." />
-          </SearchBar>
-          <FilterButton>
-            <Filter size={18} />
-            筛选
-          </FilterButton>
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus size={18} />
-            发帖
-          </Button>
-        </Actions>
-      </ForumHeader>
 
-      <ForumContent>
-        <PostsList>
-          {posts.map((post) => {
-            if (!post.author) {
-              console.error('Post has no author:', post);
-              return null;
-            }
-            return (
-            <PostCard key={post._id}>
-              <PostHeader>
-                <PostAvatar>{post.author.username.slice(0, 1)}</PostAvatar>
-                <PostAuthorInfo>
-                  <PostAuthor>{post.author.username}</PostAuthor>
-                  <PostMeta>
-                    {new Date(post.createdAt).toLocaleDateString()} · {post.tags[0] || ''}
-                  </PostMeta>
-                </PostAuthorInfo>
-                {post.author._id === currentUser._id && (
-                  <button 
-                    onClick={() => handleDeletePost(post._id)}
-                    style={{ 
-                      padding: '8px', 
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: theme.colors.danger[50],
-                      color: theme.colors.danger[500],
-                      cursor: 'pointer'
-                    }}
+      <ForumContentWrapper>
+
+        <ForumHeader>
+
+          <HeaderLeft>
+
+            <ForumBadge>
+              <Sparkles size={16} />
+              温柔交流社区
+            </ForumBadge>
+
+            <ForumTitle>
+              绿洲社区
+            </ForumTitle>
+
+            <ForumSubtitle>
+              分享你的情绪、生活与故事。
+              这里有人认真倾听，也有人和你经历过相同的夜晚。
+            </ForumSubtitle>
+
+          </HeaderLeft>
+
+          <Actions>
+
+            <SearchBar>
+
+              <SearchIcon>
+                <Search size={18} />
+              </SearchIcon>
+
+              <SearchInput
+                placeholder="搜索话题..."
+              />
+
+            </SearchBar>
+
+            <FilterButton>
+              <Filter size={18} />
+              筛选
+            </FilterButton>
+
+            <CreateButton
+              onClick={() =>
+                setIsModalOpen(true)
+              }
+            >
+              <Plus size={18} />
+              发帖
+            </CreateButton>
+
+          </Actions>
+
+        </ForumHeader>
+
+        <ForumContent>
+
+          <PostsList>
+
+            {posts.map((post) => (
+
+              <PostCard key={post._id}>
+
+                <PostHeaderStyled>
+
+                  <PostAvatar 
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => 
+                      handleViewProfile(post.author._id, post.author.username)
+                    }
                   >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </PostHeader>
-              <CardBody>
-                <PostTitle>{post.title}</PostTitle>
-                <PostContent>{post.content}</PostContent>
-                <PostTags>
-                  {post.tags.map((tag) => (
-                    <Tag key={tag}>{tag}</Tag>
-                  ))}
-                </PostTags>
-                <PostFooter>
-                  <PostActions>
-                    <ActionButton 
-                      className={post.likes.includes(currentUser._id) ? 'liked' : ''}
-                      onClick={() => handleLike(post._id)}
-                    >
-                      <Heart size={18} />
-                      {post.likes.length}
-                    </ActionButton>
-                    <ActionButton onClick={() => toggleComments(post._id)}>
-                      {expandedPosts.includes(post._id) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                      {post.comments.length} 评论
-                    </ActionButton>
-                    <ActionButton onClick={() => handleFavorite(post._id)}>
-                      <Bookmark size={18} />
-                      {favorites.includes(post._id) ? '已收藏' : '收藏'}
-                    </ActionButton>
-                    <ActionButton onClick={() => openShareModal(post._id)}>
-                      <Share2 size={18} />
-                      分享
-                    </ActionButton>
-                  </PostActions>
-                </PostFooter>
+                    {post.author?.username?.slice(0, 1)}
+                  </PostAvatar>
 
-                {expandedPosts.includes(post._id) && (
-                  <CommentsSection>
-                    <CommentsList>
-                      {post.comments.map((comment) => {
-                        if (!comment.author) {
-                          console.error('Comment has no author:', comment);
-                          return null;
+                  <PostAuthorInfo>
+
+                    <PostAuthor 
+                      style={{ cursor: 'pointer', color: '#6366f1' }}
+                      onClick={() => 
+                        handleViewProfile(post.author._id, post.author.username)
+                      }
+                    >
+                      {post.author?.username}
+                    </PostAuthor>
+
+                    <PostMeta>
+                      {new Date(
+                        post.createdAt
+                      ).toLocaleDateString()}
+                      {' · '}
+                      {post.tags?.[0]}
+                    </PostMeta>
+
+                  </PostAuthorInfo>
+
+                  {post.author?._id ===
+                    currentUser._id ? (
+                    <DeleteButton
+                      onClick={() =>
+                        handleDeletePost(
+                          post._id
+                        )
+                      }
+                    >
+                      <Trash2 size={18} />
+                    </DeleteButton>
+                  ) : friends.includes(post.author._id) ? (
+                    <button
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: '14px',
+                        border: '2px solid #6366f1',
+                        background: '#6366f1',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        cursor: 'default',
+                        transition: 'all 0.25s ease',
+                      }}
+                    >
+                      已关注
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleFollow(post.author._id)}
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: '14px',
+                        border: '2px solid #6366f1',
+                        background: following.includes(post.author._id) ? '#6366f1' : 'transparent',
+                        color: following.includes(post.author._id) ? 'white' : '#6366f1',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        transition: 'all 0.25s ease',
+                      }}
+                    >
+                      {following.includes(post.author._id) ? '已关注' : '关注'}
+                    </button>
+                  )}
+
+                </PostHeaderStyled>
+
+                <CardBody>
+
+                  <PostTitle>
+                    {post.title}
+                  </PostTitle>
+
+                  <PostContent>
+                    {post.content}
+                  </PostContent>
+
+                  <PostTags>
+
+                    {post.tags.map((tag) => (
+                      <StyledTag key={tag}>
+                        #{tag}
+                      </StyledTag>
+                    ))}
+
+                  </PostTags>
+
+                  <Divider />
+
+                  <PostFooter>
+
+                    <PostActions>
+
+                      <ActionButton
+                        className={
+                          post.likes.includes(
+                            currentUser._id
+                          )
+                            ? 'liked'
+                            : ''
                         }
-                        return (
-                        <CommentItem key={comment._id}>
-                          <CommentAvatar>{comment.author.username.slice(0, 1)}</CommentAvatar>
-                          <CommentContent>
-                            <CommentAuthor>{comment.author.username}</CommentAuthor>
-                            <span style={{ color: theme.colors.neutral[400], fontSize: theme.fonts.sizes.sm }}>
-                              {new Date(comment.createdAt).toLocaleString()}
-                            </span>
-                            {comment.replyTo && (
-                              <div style={{ color: theme.colors.primary[600], fontSize: theme.fonts.sizes.sm, marginBottom: theme.spacing[1] }}>
-                                回复 @{comment.replyTo.username}
-                              </div>
-                            )}
-                            <CommentText>{comment.content}</CommentText>
-                            <ReplyButton onClick={() => handleReply(post._id, comment._id, comment.author._id, comment.author.username)}>
-                              回复
-                            </ReplyButton>
-                          </CommentContent>
-                        </CommentItem>
-                        );
-                      })}
-                    </CommentsList>
-                    <div style={{ display: 'flex', gap: theme.spacing[3] }}>
-                      {replyTo && replyTo.postId === post._id && (
-                        <div style={{ padding: theme.spacing[2], background: theme.colors.primary[50], borderRadius: theme.borderRadius.md, fontSize: theme.fonts.sizes.sm, color: theme.colors.primary[700] }}>
-                          回复 @{replyTo.authorName}
-                          <button 
-                            onClick={() => setReplyTo(null)} 
-                            style={{ marginLeft: theme.spacing[2], color: theme.colors.neutral[400], cursor: 'pointer' }}
+                        onClick={() =>
+                          handleLike(post._id)
+                        }
+                      >
+                        <Heart size={18} />
+                        {post.likes.length}
+                      </ActionButton>
+
+                      <ActionButton
+                        onClick={() =>
+                          toggleComments(
+                            post._id
+                          )
+                        }
+                      >
+                        {expandedPosts.includes(
+                          post._id
+                        ) ? (
+                          <ChevronUp size={18} />
+                        ) : (
+                          <ChevronDown size={18} />
+                        )}
+
+                        {post.comments.length}
+                      </ActionButton>
+
+                      <ActionButton
+                        className={
+                          favorites.includes(
+                            post._id
+                          )
+                            ? 'favorited'
+                            : ''
+                        }
+                        onClick={() =>
+                          handleFavorite(
+                            post._id
+                          )
+                        }
+                      >
+                        <Bookmark size={18} />
+
+                        {favorites.includes(
+                          post._id
+                        )
+                          ? '已收藏'
+                          : '收藏'}
+                      </ActionButton>
+
+                      <ActionButton
+                        onClick={() =>
+                          openShareModal(
+                            post._id
+                          )
+                        }
+                      >
+                        <Share2 size={18} />
+                        分享
+                      </ActionButton>
+
+                    </PostActions>
+
+                    <ReadMore>
+                      查看讨论
+                      <ArrowRight size={16} />
+                    </ReadMore>
+
+                  </PostFooter>
+
+                  {expandedPosts.includes(
+                    post._id
+                  ) && (
+
+                    <CommentsSection>
+
+                      <CommentsList>
+
+                        {post.comments.map(
+                          (comment) => (
+
+                            <CommentItem
+                              key={comment._id}
+                            >
+
+                              <CommentAvatar>
+                                {comment.author?.username?.slice(
+                                  0,
+                                  1
+                                )}
+                              </CommentAvatar>
+
+                              <CommentContent>
+
+                                <CommentAuthor>
+                                  {
+                                    comment.author
+                                      ?.username
+                                  }
+                                </CommentAuthor>
+
+                                <CommentTime>
+                                  {new Date(
+                                    comment.createdAt
+                                  ).toLocaleString()}
+                                </CommentTime>
+
+                                {comment.replyTo && (
+                                  <ReplyInfo>
+                                    回复 @
+                                    {
+                                      comment.replyTo
+                                        .username
+                                    }
+                                  </ReplyInfo>
+                                )}
+
+                                <CommentText>
+                                  {
+                                    comment.content
+                                  }
+                                </CommentText>
+
+                                <ReplyButton
+                                  onClick={() =>
+                                    handleReply(
+                                      post._id,
+                                      comment._id,
+                                      comment.author
+                                        ._id,
+                                      comment.author
+                                        .username
+                                    )
+                                  }
+                                >
+                                  回复
+                                </ReplyButton>
+
+                              </CommentContent>
+
+                            </CommentItem>
+                          )
+                        )}
+
+                      </CommentsList>
+
+                      {replyTo &&
+                        replyTo.postId ===
+                          post._id && (
+
+                        <ReplyNotice>
+
+                          回复 @
+                          {
+                            replyTo.authorName
+                          }
+
+                          <CancelReplyButton
+                            onClick={() =>
+                              setReplyTo(
+                                null
+                              )
+                            }
                           >
                             取消
-                          </button>
-                        </div>
+                          </CancelReplyButton>
+
+                        </ReplyNotice>
                       )}
-                      <CommentInput
-                        type="text"
-                        placeholder={replyTo && replyTo.postId === post._id ? `回复 @${replyTo.authorName}...` : '写下你的评论...'}
-                        value={commentInputs[post._id] || ''}
-                        onChange={(e) => setCommentInputs(prev => ({ ...prev, [post._id]: e.target.value }))}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleComment(post._id))}
-                      />
-                      <CommentSubmit onClick={() => handleComment(post._id)}>
-                        <Send size={16} />
-                        发送
-                      </CommentSubmit>
-                    </div>
-                  </CommentsSection>
-                )}
-              </CardBody>
-            </PostCard>
-            );
-          })}
-        </PostsList>
 
-        <Sidebar>
-          <SidebarCard>
-            <CardHeader>
-              <SidebarTitle>热门标签</SidebarTitle>
-            </CardHeader>
-            <CardBody>
-              <TrendingTags>
-                <TagList>
-                  {['休学', '焦虑', '大学生', '社交', '心理', '疗愈', '成长', '就业', '压力', '自我成长'].map((tag) => (
-                    <Tag key={tag}>{tag}</Tag>
+                      <CommentInputWrapper>
+
+                        <CommentInput
+                          placeholder={
+                            replyTo &&
+                            replyTo.postId ===
+                              post._id
+                              ? `回复 @${replyTo.authorName}...`
+                              : '写下你的评论...'
+                          }
+                          value={
+                            commentInputs[
+                              post._id
+                            ] || ''
+                          }
+                          onChange={(e) =>
+                            setCommentInputs(
+                              (prev) => ({
+                                ...prev,
+                                [post._id]:
+                                  e.target
+                                    .value,
+                              })
+                            )
+                          }
+                          onKeyDown={(e) => {
+
+                            if (
+                              e.key ===
+                              'Enter'
+                            ) {
+
+                              e.preventDefault();
+
+                              handleComment(
+                                post._id
+                              );
+                            }
+                          }}
+                        />
+
+                        <CommentSubmit
+                          onClick={() =>
+                            handleComment(
+                              post._id
+                            )
+                          }
+                        >
+                          <Send size={18} />
+                        </CommentSubmit>
+
+                      </CommentInputWrapper>
+
+                    </CommentsSection>
+                  )}
+
+                </CardBody>
+
+              </PostCard>
+            ))}
+
+          </PostsList>
+
+          <Sidebar>
+
+            <SidebarCard>
+
+              <CardHeader>
+
+                <SidebarTitle>
+
+                  <TrendingUp
+                    size={18}
+                    style={{
+                      marginRight: 8,
+                      verticalAlign:
+                        'middle',
+                    }}
+                  />
+
+                  热门标签
+
+                </SidebarTitle>
+
+              </CardHeader>
+
+              <CardBody>
+
+                <TrendingTags>
+
+                  {[
+                    '焦虑',
+                    '大学',
+                    '疗愈',
+                    '社交',
+                    '成长',
+                    '心理',
+                    '就业',
+                    '休学',
+                  ].map((tag) => (
+
+                    <StyledTag
+                      key={tag}
+                    >
+                      #{tag}
+                    </StyledTag>
                   ))}
-                </TagList>
-              </TrendingTags>
-            </CardBody>
-          </SidebarCard>
 
-          {/* ========== ✅ 静音仓入口（你要的位置） ========== */}
-          <SidebarCard>
-            <CardBody>
-              <QuietRoomCard onClick={() => setQuietRoomOpen(true)}>
-                <QuietRoomIcon>
-                  <Headphones size={20} />
-                </QuietRoomIcon>
-                <QuietRoomText>
-                  <QuietRoomTitle>静音仓</QuietRoomTitle>
-                  <QuietRoomDesc>放松心情 · 白噪音播放器</QuietRoomDesc>
-                </QuietRoomText>
-              </QuietRoomCard>
-            </CardBody>
-          </SidebarCard>
+                </TrendingTags>
 
-          <SidebarCard>
-            <CardHeader>
-              <SidebarTitle>社区统计</SidebarTitle>
-            </CardHeader>
-            <CardBody>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing[4] }}>
-                <div>
-                  <div style={{ fontSize: theme.fonts.sizes.xl, fontWeight: theme.fonts.weights.bold, color: theme.colors.primary[600] }}>
-                    {posts.length}
-                  </div>
-                  <div style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[500] }}>总帖子数</div>
-                </div>
-                <div style={{ height: '1px', background: theme.colors.neutral[100] }} />
-                <div>
-                  <div style={{ fontSize: theme.fonts.sizes.xl, fontWeight: theme.fonts.weights.bold, color: theme.colors.primary[600] }}>
-                    {posts.reduce((sum, post) => sum + post.comments.length, 0)}
-                  </div>
-                  <div style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[500] }}>总评论数</div>
-                </div>
-                <div style={{ height: '1px', background: theme.colors.neutral[100] }} />
-                <div>
-                  <div style={{ fontSize: theme.fonts.sizes.xl, fontWeight: theme.fonts.weights.bold, color: theme.colors.primary[600] }}>
-                    {posts.reduce((sum, post) => sum + post.likes.length, 0)}
-                  </div>
-                  <div style={{ fontSize: theme.fonts.sizes.sm, color: theme.colors.neutral[500] }}>总点赞数</div>
-                </div>
-              </div>
-            </CardBody>
-          </SidebarCard>
-        </Sidebar>
-      </ForumContent>
+              </CardBody>
 
-      <CreatePostModal isOpen={isModalOpen}>
+            </SidebarCard>
+
+            <SidebarCard>
+
+              <CardHeader>
+
+                <SidebarTitle>
+
+                  <Users
+                    size={18}
+                    style={{
+                      marginRight: 8,
+                      verticalAlign:
+                        'middle',
+                    }}
+                  />
+
+                  社区统计
+
+                </SidebarTitle>
+
+              </CardHeader>
+
+              <CardBody>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection:
+                      'column',
+                    gap: 20,
+                  }}
+                >
+
+                  <div>
+
+                    <div
+                      style={{
+                        fontSize: 30,
+                        fontWeight: 800,
+                        color: '#6366f1',
+                      }}
+                    >
+                      {posts.length}
+                    </div>
+
+                    <div
+                      style={{
+                        color: '#9ca3af',
+                      }}
+                    >
+                      总帖子数
+                    </div>
+
+                  </div>
+
+                  <div
+                    style={{
+                      height: 1,
+                      background:
+                        'rgba(229,231,235,0.8)',
+                    }}
+                  />
+
+                  <div>
+
+                    <div
+                      style={{
+                        fontSize: 30,
+                        fontWeight: 800,
+                        color: '#6366f1',
+                      }}
+                    >
+                      {totalComments}
+                    </div>
+
+                    <div
+                      style={{
+                        color: '#9ca3af',
+                      }}
+                    >
+                      总评论数
+                    </div>
+
+                  </div>
+
+                  <div
+                    style={{
+                      height: 1,
+                      background:
+                        'rgba(229,231,235,0.8)',
+                    }}
+                  />
+
+                  <div>
+
+                    <div
+                      style={{
+                        fontSize: 30,
+                        fontWeight: 800,
+                        color: '#6366f1',
+                      }}
+                    >
+                      {totalLikes}
+                    </div>
+
+                    <div
+                      style={{
+                        color: '#9ca3af',
+                      }}
+                    >
+                      总点赞数
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </CardBody>
+
+            </SidebarCard>
+
+          </Sidebar>
+
+        </ForumContent>
+
+      </ForumContentWrapper>
+
+      {/* 发帖 Modal */}
+
+      <ModalOverlay
+        isOpen={isModalOpen}
+      >
+
         <ModalContent>
+
           <ModalHeader>
-            <ModalTitle>发布新帖</ModalTitle>
-            <CloseButton onClick={() => setIsModalOpen(false)}>
+
+            <ModalTitle>
+              发布新帖
+            </ModalTitle>
+
+            <CloseButton
+              onClick={() =>
+                setIsModalOpen(false)
+              }
+            >
               <X size={18} />
             </CloseButton>
+
           </ModalHeader>
+
           <ModalBody>
+
             <FormGroup>
-              <Label>标题</Label>
-              <TitleInput 
-                type="text" 
+
+              <Label>
+                标题
+              </Label>
+
+              <Input
+                type="text"
                 placeholder="输入帖子标题..."
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) =>
+                  setTitle(
+                    e.target.value
+                  )
+                }
               />
+
             </FormGroup>
+
             <FormGroup>
-              <Label>内容</Label>
-              <ContentTextarea 
+
+              <Label>
+                内容
+              </Label>
+
+              <TextArea
                 placeholder="分享你的故事、想法或问题..."
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) =>
+                  setContent(
+                    e.target.value
+                  )
+                }
               />
+
             </FormGroup>
+
             <FormGroup>
-              <Label>标签</Label>
-              <TagsInput 
-                type="text" 
+
+              <Label>
+                标签
+              </Label>
+
+              <Input
+                type="text"
                 placeholder="输入标签，用逗号分隔..."
                 value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                onChange={(e) =>
+                  setTags(
+                    e.target.value
+                  )
+                }
               />
+
             </FormGroup>
+
           </ModalBody>
+
           <ModalFooter>
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)}>取消</Button>
-            <Button onClick={handleSubmit}>
+
+            <Button
+              variant="ghost"
+              onClick={() =>
+                setIsModalOpen(false)
+              }
+            >
+              取消
+            </Button>
+
+            <Button
+              onClick={handleSubmit}
+            >
               <Send size={18} />
               发布
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </CreatePostModal>
 
-      <ShareModal isOpen={isShareModalOpen}>
+          </ModalFooter>
+
+        </ModalContent>
+
+      </ModalOverlay>
+
+      {/* 用户主页弹窗 */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={closeProfileModal}
+        userId={viewingUserId}
+        username={viewingUsername}
+      />
+
+      {/* 分享 Modal */}
+
+      <ModalOverlay
+        isOpen={
+          isShareModalOpen
+        }
+      >
+
         <ShareModalContent>
-          <ShareModalHeader>
-            <ShareModalTitle>分享帖子</ShareModalTitle>
-            <CloseButton onClick={closeShareModal}>
+
+          <ModalHeader>
+
+            <ModalTitle>
+              分享帖子
+            </ModalTitle>
+
+            <CloseButton
+              onClick={
+                closeShareModal
+              }
+            >
               <X size={18} />
             </CloseButton>
-          </ShareModalHeader>
-          <ShareModalBody>
-            <ShareOption onClick={() => { sharePostId && copyLink(sharePostId); }}>
+
+          </ModalHeader>
+
+          <ModalBody>
+
+            <ShareOption
+              onClick={() => {
+
+                if (
+                  sharePostId
+                ) {
+
+                  copyLink(
+                    sharePostId
+                  );
+                }
+              }}
+            >
+
               <ShareIcon>
                 <Copy size={20} />
               </ShareIcon>
-              <ShareText>
-                <ShareTitle>复制链接</ShareTitle>
-                <ShareDesc>复制帖子链接分享给他人</ShareDesc>
-              </ShareText>
-            </ShareOption>
-            {copied && <CopiedMessage><Check size={16} />链接已复制</CopiedMessage>}
 
-            <div style={{ marginTop: theme.spacing[4], paddingTop: theme.spacing[4], borderTop: `1px solid ${theme.colors.neutral[100]}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing[2], marginBottom: theme.spacing[3] }}>
-                <Users size={18} color={theme.colors.neutral[500]} />
-                <span style={{ fontWeight: theme.fonts.weights.medium, color: theme.colors.neutral[800] }}>分享给好友</span>
+              <ShareText>
+
+                <ShareTitle>
+                  复制链接
+                </ShareTitle>
+
+                <ShareDesc>
+                  复制帖子链接分享给他人
+                </ShareDesc>
+
+              </ShareText>
+
+            </ShareOption>
+
+            {copied && (
+
+              <CopiedMessage>
+
+                <Check size={16} />
+
+                链接已复制
+
+              </CopiedMessage>
+            )}
+
+            <div
+              style={{
+                marginTop: 24,
+              }}
+            >
+
+              <div
+                style={{
+                  fontWeight: 700,
+                  marginBottom: 14,
+                  color: '#111827',
+                }}
+              >
+                分享给好友
               </div>
+
               <FriendsList>
-                {shareFriends.map(friend => (
-                  <FriendItem 
-                    key={friend._id} 
-                    className={selectedFriend === friend._id ? 'selected' : ''}
-                    onClick={() => setSelectedFriend(friend._id)}
-                  >
-                    <FriendAvatar>{friend.username.slice(0, 1)}</FriendAvatar>
-                    <FriendName>{friend.username}</FriendName>
-                    {selectedFriend === friend._id && <Check size={18} color={theme.colors.primary[600]} />}
-                  </FriendItem>
-                ))}
+
+                {shareFriends.map(
+                  (friend) => (
+
+                    <FriendItem
+                      key={friend._id}
+                      selected={
+                        selectedFriend ===
+                        friend._id
+                      }
+                      onClick={() =>
+                        setSelectedFriend(
+                          friend._id
+                        )
+                      }
+                    >
+
+                      <FriendAvatar>
+                        {friend.username.slice(
+                          0,
+                          1
+                        )}
+                      </FriendAvatar>
+
+                      <FriendName>
+                        {
+                          friend.username
+                        }
+                      </FriendName>
+
+                      {selectedFriend ===
+                        friend._id && (
+                        <Check
+                          size={18}
+                          color="#6366f1"
+                        />
+                      )}
+
+                    </FriendItem>
+                  )
+                )}
+
               </FriendsList>
-              <Button 
-                onClick={shareToFriend} 
-                disabled={!selectedFriend}
-                style={{ width: '100%' }}
+
+              <Button
+                onClick={
+                  shareToFriend
+                }
+                disabled={
+                  !selectedFriend
+                }
+                style={{
+                  width: '100%',
+                  marginTop: 16,
+                }}
               >
                 发送给好友
               </Button>
+
             </div>
-          </ShareModalBody>
-        </ShareModalContent>
-      </ShareModal>
 
-      {/* ========== ✅ 静音仓弹窗 ========== */}
-      <CreatePostModal isOpen={quietRoomOpen}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>🎧 静音仓 - 白噪音</ModalTitle>
-            <CloseButton onClick={closeQuietRoom}>
-              <X size={18} />
-            </CloseButton>
-          </ModalHeader>
-          <ModalBody>
-            <NoiseGrid>
-              {whiteNoiseList.map(noise => (
-                <NoiseItem
-                  key={noise.id}
-                  active={currentNoise === noise.id}
-                  onClick={() => {
-                    setCurrentNoise(noise.id);
-                    setIsPlaying(true);
-                  }}
-                >
-                  <Headphones size={18} />
-                  <div style={{ fontSize: '12px', marginTop: '4px' }}>{noise.name}</div>
-                </NoiseItem>
-              ))}
-            </NoiseGrid>
-
-            {currentNoise && (
-              <NoisePlayer>
-                <div style={{ marginBottom: 8 }}>
-                  正在播放：{whiteNoiseList.find(n => n.id === currentNoise)?.name}
-                </div>
-                <PlayButton onClick={togglePlay}>
-                  {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                </PlayButton>
-                <VolumeBar>
-                  <Volume2 size={16} />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={(e) => setVolume(parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </VolumeBar>
-              </NoisePlayer>
-            )}
           </ModalBody>
-        </ModalContent>
-      </CreatePostModal>
 
-      <audio ref={audioRef} />
+        </ShareModalContent>
+
+      </ModalOverlay>
+
     </ForumContainer>
   );
 };

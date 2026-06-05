@@ -198,17 +198,6 @@ const AvatarCircle = styled.div`
   font-weight: ${theme.fonts.weights.medium};
 `;
 
-const StatusDot = styled.div<{ online: boolean }>`
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: ${({ online }) => online ? theme.colors.success[500] : theme.colors.neutral[300]};
-  border: 2px solid white;
-`;
-
 const ContactInfo = styled.div`
   flex: 1;
   min-width: 0;
@@ -226,11 +215,6 @@ const ContactMessage = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-`;
-
-const ContactTime = styled.span`
-  font-size: ${theme.fonts.sizes.xs};
-  color: ${theme.colors.neutral[400]};
 `;
 
 const UnreadBadge = styled.div`
@@ -277,11 +261,6 @@ const ChatInfo = styled.div`
 const ChatName = styled.span`
   font-weight: ${theme.fonts.weights.bold};
   color: ${theme.colors.neutral[800]};
-`;
-
-const ChatStatus = styled.span`
-  font-size: ${theme.fonts.sizes.sm};
-  color: ${theme.colors.success[500]};
 `;
 
 const ChatActions = styled.div`
@@ -936,13 +915,11 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
                   >
                     <ContactAvatar>
                       <AvatarCircle>{friend.username.slice(0, 1)}</AvatarCircle>
-                      <StatusDot online={friend.status === 'active'} />
                     </ContactAvatar>
                     <ContactInfo>
                       <ContactName>{friend.username}</ContactName>
                       <ContactMessage>点击开始聊天...</ContactMessage>
                     </ContactInfo>
-                    <ContactTime>在线</ContactTime>
                   </ContactItem>
                 ))
               ) : (
@@ -989,7 +966,6 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
                 <ChatAvatar>{selectedFriend.username.slice(0, 1)}</ChatAvatar>
                 <ChatInfo>
                   <ChatName>{selectedFriend.username}</ChatName>
-                  <ChatStatus>在线</ChatStatus>
                 </ChatInfo>
                 <ChatActions>
                   <ActionButton>
@@ -1039,7 +1015,7 @@ export const ChatPage = ({ onNavigate, currentUser }: ChatPageProps) => {
                             <MessageContent>{msg.content}</MessageContent>
                           )}
                         </MessageBubble>
-                        <MessageTime>{new Date(msg.createdAt).toLocaleTimeString()}</MessageTime>
+                        <MessageTime>{new Date(msg.createdAt).toLocaleString()}</MessageTime>
                       </MessageItem>
                     );
                   })}

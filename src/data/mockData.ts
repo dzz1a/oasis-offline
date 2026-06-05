@@ -228,29 +228,33 @@ export const mockSimulations: Simulation[] = [
 ];
 
 export const mockEmotionRecords: EmotionRecord[] = [
-  {
-    id: '1',
-    userId: '1',
-    emotion: 'anxious',
-    intensity: 6,
-    note: '今天有点焦虑，因为想到复学的事情',
-    createdAt: new Date('2024-03-15'),
-  },
-  {
-    id: '2',
-    userId: '1',
-    emotion: 'calm',
-    intensity: 4,
-    note: '下午做了冥想，感觉好多了',
-    createdAt: new Date('2024-03-14'),
-  },
+  { id: '1', userId: '1', emotion: 'happy', intensity: 8, note: '今天心情很好！', createdAt: new Date('2024-03-01') },
+  { id: '2', userId: '1', emotion: 'calm', intensity: 5, note: '平静的一天', createdAt: new Date('2024-03-02') },
+  { id: '3', userId: '1', emotion: 'anxious', intensity: 6, note: '有点焦虑', createdAt: new Date('2024-03-03') },
+  { id: '4', userId: '1', emotion: 'sad', intensity: 4, note: '有点难过', createdAt: new Date('2024-03-04') },
+  { id: '5', userId: '1', emotion: 'happy', intensity: 9, note: '非常开心！', createdAt: new Date('2024-03-05') },
+  { id: '6', userId: '1', emotion: 'excited', intensity: 7, note: '期待明天', createdAt: new Date('2024-03-06') },
+  { id: '7', userId: '1', emotion: 'calm', intensity: 6, note: '冥想后很平静', createdAt: new Date('2024-03-07') },
+  { id: '8', userId: '1', emotion: 'angry', intensity: 3, note: '有点烦躁', createdAt: new Date('2024-03-08') },
+  { id: '9', userId: '1', emotion: 'happy', intensity: 7, note: '和朋友聊天很开心', createdAt: new Date('2024-03-09') },
+  { id: '10', userId: '1', emotion: 'calm', intensity: 5, createdAt: new Date('2024-03-10') },
+  { id: '11', userId: '1', emotion: 'anxious', intensity: 5, note: '想到复学有点担心', createdAt: new Date('2024-03-11') },
+  { id: '12', userId: '1', emotion: 'happy', intensity: 8, createdAt: new Date('2024-03-12') },
+  { id: '13', userId: '1', emotion: 'excited', intensity: 9, note: '收到好消息！', createdAt: new Date('2024-03-13') },
+  { id: '14', userId: '1', emotion: 'calm', intensity: 6, createdAt: new Date('2024-03-14') },
+  { id: '15', userId: '1', emotion: 'anxious', intensity: 6, note: '今天有点焦虑，因为想到复学的事情', createdAt: new Date('2024-03-15') },
+  { id: '16', userId: '1', emotion: 'sad', intensity: 3, createdAt: new Date('2024-03-16') },
+  { id: '17', userId: '1', emotion: 'happy', intensity: 7, createdAt: new Date('2024-03-17') },
+  { id: '18', userId: '1', emotion: 'calm', intensity: 5, createdAt: new Date('2024-03-18') },
 ];
 
-export const emotionLabels: Record<string, { label: string; color: string }> = {
-  happy: { label: '开心', color: '#22c55e' },
-  sad: { label: '难过', color: '#3b82f6' },
-  anxious: { label: '焦虑', color: '#f59e0b' },
-  angry: { label: '生气', color: '#ef4444' },
-  calm: { label: '平静', color: '#0ea5e9' },
-  excited: { label: '兴奋', color: '#ec4899' },
+export const emotionLabels: Record<string, { label: string; color: string; emoji: string }> = {
+  happy: { label: '开心', color: '#22c55e', emoji: '😊' },
+  sad: { label: '难过', color: '#3b82f6', emoji: '😢' },
+  anxious: { label: '焦虑', color: '#f59e0b', emoji: '😰' },
+  angry: { label: '生气', color: '#ef4444', emoji: '😤' },
+  calm: { label: '平静', color: '#0ea5e9', emoji: '😌' },
+  excited: { label: '兴奋', color: '#ec4899', emoji: '🤩' },
+  tired: { label: '疲惫', color: '#7c3aed', emoji: '😴' },
+  hopeful: { label: '期待', color: '#f97316', emoji: '🌟' },
 };

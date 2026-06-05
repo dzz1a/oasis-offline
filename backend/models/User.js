@@ -39,9 +39,8 @@ const userSchema = new mongoose.Schema({
   },
   energyLevel: {
     type: Number,
-    default: 75,
-    min: 0,
-    max: 100
+    default: 0,
+    min: 0
   },
   tags: {
     type: [String],
@@ -51,12 +50,26 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
   }],
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now
   },
   lastLogin: {
     type: Date
+  },
+  privacy: {
+    showEnergy: { type: Boolean, default: true },
+    showEmotionStatus: { type: Boolean, default: true },
+    showEmotionContent: { type: Boolean, default: false },
+    displayBadges: { type: [mongoose.Schema.Types.ObjectId], default: [], max: 3 }
   }
 });
 
